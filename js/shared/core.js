@@ -23,6 +23,8 @@ var Core = {
         e.speed_c = e.speed;
         
         Core.Translate.update(e);
+        
+        return e;
     
     },
     

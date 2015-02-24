@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script type="text/javascript" src="js/underscore.min.js"></script>
+<script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
+<script type="text/javascript" src="js/net.js"></script>
+<script type="text/javascript" src="js/socket.io.min.js"></script>
+</head>
+<body>
+
+<input id="startServer" type="button" value="server running" disabled="disabled" />
+
+<br />
+<br />
+
+<label>Player: </label><input id="playercount" type="text" disabled="disabled" value="0" />
+<label>Games: </label><input id="gamecount" type="text" disabled="disabled" value="0" />
+
+<script type="text/javascript">
+
+function connect() {
+
+    Net.init(onConnect);
+
+}
+
+function onConnect() {
+
+    Net.bind('playercount', function(data) {
+        
+        $('#playercount').val(data[0]);
+    
+    });
+
+    Net.send('debug');
+
+}
+
+$(document).ready(function() {
+
+    // try to connect to server
+    Net.onDisconnect = function() {
+        
+        $('#startServer').removeAttr('disabled').val('start server');
+        
+    
+    };
+    
+    connect();
+
+    $('#startServer').click(function(ev) {
+    
+        $.get('start-server.php');
+        
+        $('#startServer').attr('disabled', 'disabled').val('server running');
+        
+        connect();
+    
+    });
+
+});
+
+</script>
+</body>
+</html>

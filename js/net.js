@@ -1,76 +1,72 @@
 // handles all connection stuff with node.js
 var Net = {
 
-    offline: true, 
+    offline: false,
+    
+    socket: null, 
+    
+    onConnect: null,  
 
-    send: function(msg, data, success) {
+    init: function(success) {
     
-        if (Net.offline) {
-        
-            Net.sendStub(msg, data, success);
-        
-        } else {
+        Net.onConnect = success;
     
-            success();
+        Net.socket = io.connect('http://localhost:1337', { 'force new connection': true }); 
+        
+        Net.socket.on('greeting', function(data) {
+        
+            console.log('Connected with jrpg-server v' + data.version);
+            
+            Net.onConnect();
+        
+        });
+        
+        Net.socket.on('error', function() {
+            
+            if (!Net.socket.socket.connected) {
+            
+                Net.onDisconnect();
+            }
+
+        });
+        
+        // we got disconnected from the server
+        // let's try to reconnect
+        Net.socket.on('disconnect', Net.onDisconnect);
+
+    },
+    
+    onDisconnect: function() {
+    
+        console.warn('jrpg-server has gone away.');
+        
+        // show an empty screen
+        UI.screen();
+                
+        // show an error message and bind the init 
+        // method to the 'ok' button
+        UI.alert('Server Unavailable', Net.init, [Net.onConnect]);
+
+    },  
+
+    send: function(msg, data, success, returnMsg) {
+    
+        console.log('send <' + msg + '>');
+        
+        if (success) {
+        
+            Net.socket.on(returnMsg || msg, success);
         
         }
+    
+        Net.socket.emit(msg, data);
     
     }, 
     
-    sendStub: function(msg, data, success) {
+    bind: function(msg, success) {
     
-        switch (msg) {
-        
-            case 'join': 
-            case 'create':
-            
-                var gameState = { 
-                        elements: [], 
-                        map: { 
-                            assetId: 'map-playground', 
-                            reqAssets: ['desert.png'],
-                            theme: 'desert.png', 
-                            width: 6400, 
-                            height: 3200,  
-                            grid: {
-                                rows: 100, 
-                                cols: 100, 
-                                tiles: []
-                            } 
-                        }, 
-                        hero: { 
-                            assetId: 'hero.png',
-                            id: 1, 
-                            x: 1000, 
-                            y: 1000, 
-                            speed: 1  
-                        } 
-                    };
-            
-                for (var i = 0; i < gameState.map.grid.cols; i++) {
-                
-                    for (var j = 0; j < gameState.map.grid.rows; j++) {
-                    
-                        gameState.map.grid.tiles.push({ name: i + '_' + j, walkable: true });
-                    
-                    }
-                
-                }
-                
-                gameState.elements.push(gameState.hero);
-            
-                success(gameState);
-            
-                break;
-            
-            case 'ready':
-            
-                success();
-                
-                break;
-        
-        }
+        Net.socket.on(msg, success);
     
-    },     
+    } 
 
 }

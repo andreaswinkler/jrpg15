@@ -14,12 +14,31 @@ var Lobby = {
     // to be a jquery object
     init: function(container) {
     
-        UI.init(container);
+        UI.container = container;
+    
+        Net.init(function(data) {
         
-        console.log('Initalized. v0.1');
+            UI.init();
+            
+            console.log('Initalized. v0.1');
         
-        // TODO: handle login and stuff !!!
-        UI.user = { id: 1, name: 'Andi' };
+            UI.screen('lobby', 'login');
+        
+        });
+    
+    }, 
+
+    // this method is called once the user is successfully logged in
+    // data is empty (login failed) or represents the user object
+    onLogin: function(data) {
+    
+        if (data) {
+        
+            Lobby.user = data;
+            
+            UI.screen('lobby', 'main');
+        
+        } 
     
     }, 
 
@@ -67,14 +86,14 @@ var Lobby = {
         Renderer.draw(Game.state);
         
         // announce that we are ready
-        Net.send('ready', [], Lobby.onGameJoined);               
+        Net.send('gameloaded', [], Lobby.onJoinGame);               
     
     }, 
     
     // the server has added the player to the current game, now
     // we can display and run the game
-    onGameJoined: function() {
-         
+    onJoinGame: function(gameState) {
+
         // show the game screen
         UI.screen('game');
         

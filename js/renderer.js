@@ -194,8 +194,8 @@ var Renderer = {
         // it's always the hero position minus half the screen 
         // width and height, as long as we don't implement a borderless
         // map rendering
-        Renderer.localRoot.x = Math.max(Renderer.tileHeight, Math.min(gameState.map.width - Renderer.width, gameState.hero.x - Renderer.halfWidth));
-        Renderer.localRoot.y = Math.max(Renderer.halfTileHeight, Math.min(gameState.map.height - Renderer.height, gameState.hero.y - Renderer.halfHeight));
+        Renderer.localRoot.x = Math.max(Renderer.tileHeight, Math.min(gameState.map.width - Renderer.width, Lobby.user.hero.x - Renderer.halfWidth));
+        Renderer.localRoot.y = Math.max(Renderer.halfTileHeight, Math.min(gameState.map.height - Renderer.height, Lobby.user.hero.y - Renderer.halfHeight));
         
         // draw map
         Renderer.drawMap(gameState.map);

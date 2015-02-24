@@ -25,6 +25,12 @@ var Game = {
         _.each(Game.state.elements, Core.prepareElement);
 
         Game.running = false;
+        
+        Net.bind('createelement', function(element) {
+        
+            Game.state.elements.push(Core.prepareElement(element));
+        
+        });
 
     },
     

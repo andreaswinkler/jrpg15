@@ -58,7 +58,7 @@ var Assets = {
     // this is a specialized method to extract all assetIds from the game state
     listFromGameState: function(gameState) {
     
-        return Assets.listFromObjects(gameState.elements.concat(gameState.map).concat(gameState.hero));
+        return Assets.listFromObjects(gameState.elements.concat(gameState.map));
     
     }, 
 
