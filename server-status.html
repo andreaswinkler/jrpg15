@@ -5,16 +5,21 @@
 <script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
 <script type="text/javascript" src="js/net.js"></script>
 <script type="text/javascript" src="js/socket.io.min.js"></script>
+<script type="text/javascript" src="js/global.js"></script>
+<link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="server-status">
+
+<div class="center dialog">
 
 <input id="startServer" type="button" value="server running" disabled="disabled" />
 
-<br />
-<br />
+<br /><br />
 
-<label>Player: </label><input id="playercount" type="text" disabled="disabled" value="0" />
-<label>Games: </label><input id="gamecount" type="text" disabled="disabled" value="0" />
+<span class="info playercount"></span><br />
+<span class="info gamecount"></span>
+
+</div>
 
 <script type="text/javascript">
 
@@ -26,9 +31,10 @@ function connect() {
 
 function onConnect() {
 
-    Net.bind('playercount', function(data) {
+    Net.bind('info', function(data) {
         
-        $('#playercount').val(data[0]);
+        $('.playercount').html(data.players + ' players online');
+        $('.gamecount').html(data.games + ' games active');
     
     });
 
@@ -42,7 +48,7 @@ $(document).ready(function() {
     Net.onDisconnect = function() {
         
         $('#startServer').removeAttr('disabled').val('start server');
-        
+        $('.playercount, .gamecount').html('');
     
     };
     

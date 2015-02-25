@@ -47,7 +47,9 @@ var UI = {
     initLobbyScreenMainView: function(e) {
     
         var view = UI.initView(e, 'main'), 
-            dialog = UI.dialog('options', view);
+            dialog = UI.dialog('options', view), 
+            gamelist = UI.listWindow('public-games', view, 'Public Games'), 
+            buddylist = UI.listWindow('buddies', view, 'Buddies');
              
         // create game section
         dialog.append('<input type="button" value="create game" class="creategame" />');
@@ -58,16 +60,14 @@ var UI = {
         
         });
         
-        // public games section
-        view.append('<ul class="public-games"></ul>');
-        
-        Net.send('gamelist', {}, UI.updateGamelist);
+        Net.bind('gamelist', UI.updateGamelist);
+        Net.bind('buddylist', UI.updateBuddylist);
     
     },  
     
     updateGamelist: function(list) {
     
-        var container = UI.container.find('.public-games');
+        var container = UI.container.find('.public-games ul');
         
         // empty list
         container.html('');
@@ -85,6 +85,35 @@ var UI = {
             Net.send('joingame', { gameId: $(ev.target).attr('data-gameId') }, Lobby.onJoinGame);
         
         });  
+    
+    }, 
+    
+    updateBuddylist: function(list) {
+    
+        var container = UI.container.find('.buddies ul');
+        
+        // empty list
+        container.html('');
+        
+        _.each(list, function(e) {
+        
+            if (e.online) {
+            
+                container.append('<li class="online">' + e.name + (e.gameId ? ' <input type="button" data-gameId="' + e.gameId + '" value="join" class="joingame" /></li>' : '') + '</li>');
+            
+            } else {
+            
+                container.append('<li>' + e.name + '</li>');    
+            
+            }
+        
+        });
+        
+        container.find('.joingame').click(function(ev) {
+        
+            Net.send('joingame', { gameId: $(ev.target).attr('data-gameId') }, Lobby.onJoinGame);
+        
+        });
     
     },  
     
@@ -198,9 +227,47 @@ var UI = {
     // create an empty dialog
     dialog: function(key, container) {
     
-        var e = $('<div class="dialog ' + key + '"></div>');
+        var e = $('<div class="dialog center ' + key + '"></div>');
         
         (container || UI.container).append(e);
+        
+        return e;
+    
+    }, 
+    
+    // create an empty window, the basic version of all interfaces
+    window: function(key, container, title, allowClose) {
+    
+        var e = $('<div class="window ' + key + '"></div>');
+        
+        (container || UI.container).append(e);
+        
+        e.append('<span class="title">' + title + '</span>');
+        
+        if (allowClose) {
+        
+            e.append('<input type="button" class="window-close" value="x" />');
+            
+            e.find('.window-close').click(function(ev) {
+        
+                $(ev.target).closest('.window').addClass('hidden');
+            
+            });
+        
+        }
+        
+        e.append('<div class="window-content"></div>');
+        
+        return e;    
+    
+    }, 
+    
+    // create an window containing an empty list
+    listWindow: function(key, container, title) {
+    
+        var e = UI.window(key, container, title);
+        
+        e.find('.window-content').append('<ul></ul>');
         
         return e;
     

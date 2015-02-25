@@ -23,13 +23,24 @@ module.exports = {
     // incrementing number used for game ids
     gamesSequenceNo: 0, 
     
-    debugInfo: function(msg, data) {
+    debugInfo: function() {
 
         if (this.debug) {
 
-            this.debug.emit(msg, data);
+            this.debug.emit('info', { players: this.players.length, games: this.games.length });
         
         }
+    
+    }, 
+    
+    lobbyInfo: function() {
+
+        this._.each(this.players, function(e) {
+        
+            e.socket.emit('gamelist', this.gamelist(e.socket));
+            e.socket.emit('buddylist', this.buddylist(e.socket));
+        
+        }, this);
     
     }, 
     
@@ -46,7 +57,9 @@ module.exports = {
             
             this.players.push(player);
 
-            this.debugInfo('playercount', [this.players.length]);
+            this.debugInfo(); 
+            
+            this.lobbyInfo();
             
             return {
                 id: player.id, 
@@ -55,6 +68,8 @@ module.exports = {
             };
         
         } catch (err) {
+          
+            console.dir(err);
 
             return {};
         
@@ -81,7 +96,7 @@ module.exports = {
         
         } else {
         
-            this.debugInfo('playercount', [this.players.length]);
+            this.debugInfo(); 
         
         }
 
@@ -91,7 +106,34 @@ module.exports = {
     
         return this._.map(this.games, function(e) { return { id: e.id, name: e.name, players: e.players.length } });                
     
-    }, 
+    },
+    
+    buddylist: function(socket, data) {
+    
+        var list = [];
+        
+        if (socket.player) {
+        
+            this._.each(socket.player.buddies, function(e) {
+            
+                var player = this.player(e.id) || null, 
+                    game; 
+            
+                if (player) {
+                
+                    game = this.gameByPlayer(player.id);
+                
+                }
+            
+                list.push({ id: e.id, name: player != null ? player.name : e.name, online: player != null, gameId: game ? game.id : 0 });
+            
+            }, this);
+        
+        }
+        
+        return this._.sortBy(list, function(e) { return (e.gameId) + (e.online ? 1 : 0); });
+    
+    },  
     
     createGame: function(socket, data) {
     
@@ -132,6 +174,10 @@ module.exports = {
         // bind the socket to the current game id
         socket.gameId = game.id;
         
+        this.debugInfo(); 
+        
+        this.lobbyInfo();
+        
         // return the current game state
         return game.state;
     
@@ -169,6 +215,12 @@ module.exports = {
     game: function(id) {
     
         return this._.find(this.games, function(e) { return e.id == id; });
+    
+    }, 
+    
+    gameByPlayer: function(playerId) {
+    
+        return this._.find(this.games, function(e) { return this._.find(e.players, function(e) { return e.id == playerId }); }, this);
     
     }, 
     
@@ -229,7 +281,9 @@ module.exports = {
         
         if (game.players.length == 0) {
         
-            this.games = this._.without(this.games, game);        
+            this.games = this._.without(this.games, game); 
+            
+            this.debugInfo();        
         
         }
 

@@ -14,12 +14,6 @@ io.sockets.on('connection', function(socket) {
     
     }); 
     
-    socket.on('gamelist', function(d) {
-    
-        socket.emit('gamelist', js.gamelist(socket, d));
-    
-    });
-    
     socket.on('creategame', function(d) {
     
         socket.emit('creategame', js.createGame(socket, d));
@@ -53,6 +47,8 @@ io.sockets.on('connection', function(socket) {
     socket.on('debug', function() {
     
         js.debug = socket;
+        
+        js.debugInfo();
     
     });
     
