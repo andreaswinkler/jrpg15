@@ -20,5 +20,21 @@ $(document).ready(function(ev) {
     });
 
     $(window).trigger('resize');
+    
+    if (typeof(Lobby) !== 'undefined') {
+    
+        Lobby.init($('body'), function() {
+        
+            Net.send('login', { playername: '1983', password: '' }, function(data) {
+            
+                Lobby.onLogin(data);
+                
+                UI.currentScreen.find('.creategame').trigger('click');
+            
+            });
+        
+        });
+    
+    }
 
 });

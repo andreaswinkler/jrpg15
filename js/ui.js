@@ -6,6 +6,12 @@ var UI = {
     // the whole game will be put into this container
     container: null, 
 
+    // the current mode
+    mode: '', 
+    
+    // the current screen
+    currentScreen: null, 
+
     // initialize the UI by passing a parent DOM element (e.g. body)
     init: function() {
     
@@ -13,8 +19,62 @@ var UI = {
         UI.initLobbyScreen();
         UI.initLoadingScreen();
         UI.initGameScreen();
+        
+        // bind the key event listener
+        UI.initKeyEvents();
     
     }, 
+    
+    initKeyEvents: function() {
+    
+        $(document).keydown(function(ev) {
+        
+            console.log('keydown <' + ev.which + '>');
+            
+            switch (ev.which) {
+            
+                // esc
+                case 27:
+                
+                    UI.escMenu();
+                
+                    break;
+            
+            }
+        
+        });
+    
+    },
+    
+    exists: function(key) {
+
+        return UI.currentScreen.find('.' + key).length > 0;
+    
+    }, 
+    
+    escMenu: function() {
+    
+        if (UI.mode == 'game' && !UI.exists('game-menu')) {
+        
+            UI.menu('game-menu', [
+                ['Leave Game', UI.leaveGame], 
+                ['Return to Game', UI.close]
+            ], UI.currentScreen);
+        
+        }
+    
+    }, 
+    
+    leaveGame: function() {
+    
+        Net.send('leavegame', {}, function() {
+        
+            UI.close('game-menu');
+            UI.screen('lobby', 'main');
+        
+        });
+    
+    },  
     
     initLobbyScreen: function() {
     
@@ -155,6 +215,20 @@ var UI = {
     
     },
     
+    close: function(ev) {
+    
+        if (ev.target) {
+        
+            $(ev.target).closest('.dialog, .window').remove();
+        
+        } else {
+        
+            UI.currentScreen.find('.' + ev).remove();
+        
+        }
+    
+    }, 
+    
     // handle clicks on the game screen (i.e. clicks on the map)
     onGameScreenClick: function(event, x, y) {
     
@@ -189,11 +263,15 @@ var UI = {
     // display a screen, all others are hidden
     screen: function(key, sub) {
     
+        UI.mode = key + (sub ? '-' + sub : '');
+        UI.currentScreen = UI.container.find('#screen_' + key);
+    
         UI.container.find('.screen').removeClass('active').filter('#screen_' + key).addClass('active');
         
         if (sub) {
         
             UI.container.find('.screen.active .view').removeClass('active').filter('#view_' + sub).addClass('active');
+            UI.currentScreen = UI.currentScreen.find('#view_' + sub);
         
         }    
     
@@ -242,7 +320,7 @@ var UI = {
         
         (container || UI.container).append(e);
         
-        e.append('<span class="title">' + title + '</span>');
+        e.append('<span class="title">' + (title || '') + '</span>');
         
         if (allowClose) {
         
@@ -268,6 +346,29 @@ var UI = {
         var e = UI.window(key, container, title);
         
         e.find('.window-content').append('<ul></ul>');
+        
+        return e;
+    
+    }, 
+    
+    // create a menu-window
+    menu: function(key, items, container) {
+    
+        var e = UI.listWindow(key, container), 
+            list = e.find('.window-content ul'), 
+            eItem;
+        
+        e.addClass('center');
+        
+        _.each(items, function(i) {
+        
+            eItem = $('<li>' + i[0] + '</li>');
+            
+            eItem.appendTo(list);
+            
+            eItem.click(i[1]);            
+        
+        });
         
         return e;
     

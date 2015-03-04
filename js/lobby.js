@@ -12,7 +12,7 @@ var Lobby = {
     // interface and sets everything up.
     // the whole game is fitted inside the passed container which needs 
     // to be a jquery object
-    init: function(container) {
+    init: function(container, success) {
     
         UI.container = container;
     
@@ -23,6 +23,12 @@ var Lobby = {
             console.log('Initalized. v0.1');
         
             UI.screen('lobby', 'login');
+            
+            if (success) {
+            
+                success();
+            
+            }
         
         });
     

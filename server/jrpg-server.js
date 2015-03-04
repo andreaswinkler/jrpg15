@@ -4,6 +4,7 @@ module.exports = {
 
     _fs: require('fs'), 
     _: require('../js/underscore.min.js'),
+    _core: require('../js/shared/core.js'), 
 
     version: '1.0',
     
@@ -18,7 +19,10 @@ module.exports = {
     players: [],
     
     // the debug socket, if connected
-    debug: null,  
+    debug: null,
+    
+    // the droptables
+    dropTables: null, 
     
     // incrementing number used for game ids
     gamesSequenceNo: 0, 
@@ -44,6 +48,23 @@ module.exports = {
     
     }, 
     
+    drop: function(source, playerLevel, magicFind, goldFind) {
+    
+        // create a drop based on source droptable and player level, 
+        // gold find and magic find 
+        var dropTable = this.dropTables[source.key] || this.dropTables.default, 
+            amount = this._core.randomInt(dropTable.min, dropTable.max), 
+            drop;
+        
+        // if we encountered a null-drop, we don't do anything
+        if (amount > 0) {       
+        
+            
+        
+        }   
+    
+    }, 
+    
     login: function(socket, playername, password) {
        
         var player;
@@ -54,6 +75,14 @@ module.exports = {
             
             socket.player = player;
             player.socket = socket;
+            
+            // temp player-specific items
+            player.items = {
+                vendors: {}, 
+                drops: {}
+            };
+            
+            this.drop({}, 1, 0);
             
             this.players.push(player);
 
@@ -179,7 +208,7 @@ module.exports = {
         this.lobbyInfo();
         
         // return the current game state
-        return game.state;
+        return game.state.maps.playground.state;
     
     }, 
     
@@ -233,27 +262,34 @@ module.exports = {
     createGameState: function(data) {
     
         var gameState = { 
-                elements: [], 
-                map: { 
-                    assetId: 'map-playground', 
-                    reqAssets: ['desert.png'],
-                    theme: 'desert.png', 
-                    width: 6400, 
-                    height: 3200,  
-                    grid: {
-                        rows: 100, 
-                        cols: 100, 
-                        tiles: []
-                    } 
-                }
+                maps: {
+                    'playground': {
+                        state: {
+                            elements: [], 
+                            map: { 
+                                id: 'playground', 
+                                assetId: 'map-playground', 
+                                reqAssets: ['desert.png'],
+                                theme: 'desert.png', 
+                                width: 6400, 
+                                height: 3200,  
+                                grid: {
+                                    rows: 100, 
+                                    cols: 100, 
+                                    tiles: []
+                                } 
+                            }
+                        }
+                    }
+                } 
             }, 
             i, j;
     
-        for (i = 0; i < gameState.map.grid.cols; i++) {
+        for (i = 0; i < gameState.maps.playground.state.map.grid.cols; i++) {
         
-            for (j = 0; j < gameState.map.grid.rows; j++) {
+            for (j = 0; j < gameState.maps.playground.state.map.grid.rows; j++) {
             
-                gameState.map.grid.tiles.push({ name: i + '_' + j, walkable: true });
+                gameState.maps.playground.state.map.grid.tiles.push({ name: i + '_' + j, walkable: true });
             
             }
         
@@ -275,15 +311,21 @@ module.exports = {
             player = this.player(playerId), 
             i;
         
-        game.state.elements = this._.without(game.state.elements, player.hero);
+        if (game && player) {
         
-        game.players = this._.without(game.players, player);
-        
-        if (game.players.length == 0) {
-        
-            this.games = this._.without(this.games, game); 
+            game.state.elements = this._.without(game.state.elements, player.hero);
             
-            this.debugInfo();        
+            game.players = this._.without(game.players, player);
+            
+            if (game.players.length == 0) {
+            
+                this.games = this._.without(this.games, game); 
+                
+                this.debugInfo(); 
+                
+                this.lobbyInfo();       
+            
+            }
         
         }
 
