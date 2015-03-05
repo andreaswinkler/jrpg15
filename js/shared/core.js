@@ -18,7 +18,63 @@
     
     var Core = {
     
+        Flags: {
+            WEAPON: 0, 
+            ARMOR: 1, 
+            JEWELRY: 2, 
+            MATERIAL: 3, 
+            ORNAMENT: 4, 
+            UTILITY: 5, 
+            QUEST: 6,
+            OTHER: 7,
+            ONEHAND: 8,
+            TWOHAND: 9, 
+            BELT: 10,
+            HEADPIECE: 11,
+            PANTS: 12,
+            GLOVES: 13,
+            SHOULDERS: 14,
+            BRACERS: 15,
+            OFFHAND: 16, 
+            RING: 17,
+            AMULET: 18, 
+            TOKEN: 19, 
+            BOOTS: 20,
+            GEM: 21, 
+            POTION: 22,
+            RUNE: 23,
+            HEALTHGLOBE: 24,
+            CHESTARMOR: 25,
+            SWORD: 26,
+            STAFF: 27,
+            BOW: 28,
+            RUBY: 29,
+            EMERALD: 30,
+            TOPAZ: 31,
+            AMETHYST: 32,
+            SAPPHIRE: 33, 
+            SMALLSWORD: 34,
+            CHIPPED: 35,
+            FLAWED: 36,
+            NORMAL: 37,
+            MAGIC: 38,
+            RARE: 39,
+            SET: 40,
+            LEGENDARY: 41,
+            ANCIENT: 42,
+            ETHERAL: 43,
+            GOLD: 44,
+            HEALTHPOTION: 45,
+            AUTOPICKUP: 46                  
+        }, 
+    
         dt: 0, 
+    
+        check: function(e, condition1) {
+        
+            return arguments.length - 1 == _.intersection(arguments[0][0], [].slice.call(arguments, 1)).length;
+        
+        }, 
     
         update: function(e) {
         
@@ -236,12 +292,55 @@
             
             }, 
             
-            // random int value between min and max
+            // return a random int value
             randomInt: function(min, max) {
             
-                return Math.floor(Math.random() * (max - min) + min);
+                return Math.round(this.random(min, max));
             
             }, 
+            
+            // random item from a set with different probabilities
+            // set is a list of arrays where [0] holds the element
+            // and [1] holds the probability (0 = 0%, 1 = 100%)
+            // e.g.: [[{object 1}, 0.2], [{object 2}, 0.8]]
+            // in the example the method would return object 1 in 20% and 
+            // object 2 in 80% of the cases
+            randomA: function(set, returnComplete, key) {
+            
+                // get a random number and initialize v as 0
+                var r = Math.random(),
+                    returnComplete = returnComplete || false, 
+                    key = key || 1,  
+                    v = 0, i;
+
+                // we loop through the set and add up the probability each 
+                // iteration. if the probability is larger than the random 
+                // number we've found our element  
+                // if all propabilities add up to 1 this should return 
+                // individual elements correctly
+                for (i = 0; i < set.length; i++) {
+                
+                    v += set[i][key];
+                
+                    if (r <= v) {
+                    
+                        if (returnComplete) {
+                        
+                            return set[i];
+                        
+                        } else {
+                        
+                            return set[i][0];
+                        
+                        }
+                    
+                    }    
+                
+                }
+            
+                return null;
+            
+            }
         
         }
     

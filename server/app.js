@@ -57,8 +57,5 @@ io.sockets.on('connection', function(socket) {
 
 });
 
-// start server loop
-js.run();
-
-// load droptables
-js.dropTables = require('./../store/droptables.json');
+// initialize the server
+js.init();

@@ -1,3 +1,9 @@
+2015-03-05/4
+Added Flags System
+Added Droptables
+Added Basic Drop System
+Added Blueprints
+
 2015-03-04/2
 Added in-game ESC-Menu (return, leave game)
 Added core to jrpg-server

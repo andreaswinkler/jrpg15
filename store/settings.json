@@ -1,0 +1,53 @@
+{
+    "droptables": {
+        "default": {
+            "amount": [
+                [0, 0.1], 
+                [1, 0.8], 
+                [2, 0.1]
+            ],
+            "items": [
+                ["gold", 1],
+                ["potion", 0.25],
+                ["gem", 0.1], 
+                ["weapon", 0.5]
+            ]
+        }
+    },
+    "blueprints": [
+        [
+            "Gold", 1, 100, 1, 
+            ["gold", "autopickup"], 
+            "Buys you goods and services.", 
+            {}
+        ],
+        [
+            "Health Potion", 1, 100, 0.5, 
+            ["healthpotion", "potion", "autopickup"], 
+            "Restores {settings.healthpotion_restore_percent}% of your health and has a {settings.healthption_cooldown_duration_seconds} cooldown.",
+            {}
+        ], 
+        [
+            "Chipped Ruby", 1, 10, 1, 
+            ["gem", "ruby", "ornament"], 
+            "", 
+            { "weapon": [["minDmg", 1], ["maxDmg", 2]], "headpiece": [["bonusXp", 10]], "armor": [["str", 10]], "jewelry": [["critDmg", 10]] }
+        ], 
+        [
+            "Flawed Ruby", 9, 20, 1, 
+            ["gem", "ruby", "ornament"], 
+            "", 
+            { "weapon": [["minDmg", 2], ["maxDmg", 4]], "headpiece": [["bonusXp", 12.5]], "armor": [["str", 15]], "jewelry": [["critDmg", 15]] }
+        ],
+        [
+            "Small Sword", 1, 10, 1, 
+            ["weapon", "onehand", "sword"], 
+            "A butter knife.", 
+            { "minDmg": 1, "maxDmg": 3, "as": 1.2 }
+        ]
+    ],
+    "settings": {
+        "healthpotion_restore_percent": 60,
+        "healthpotion_cooldown_duration_seconds": 120
+    }
+}
