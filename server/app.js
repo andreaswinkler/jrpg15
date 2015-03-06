@@ -57,5 +57,5 @@ io.sockets.on('connection', function(socket) {
 
 });
 
-// initialize the server
-js.init();
+// start the server loop
+js.run();

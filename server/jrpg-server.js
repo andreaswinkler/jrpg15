@@ -8,15 +8,25 @@
     
             var _ = require('../js/underscore.min.js');
             var fs = require('fs');
-            var Core = require('../js/shared/core.js');
-            var F = Core.Flags;            
-            var Utils = Core.Utils;
+            var Core = require('../js/shared/core.js'); 
         
         } else if (this._) {
-        
+            
             var _ = this._;
+            var Core = this.Core;
         
         }
+        
+        var Utils = Core.Utils;
+        var F = Core.Flags;
+        var K = [];
+        
+        _.each(F, function(value, key) {
+            
+            K[value] = key;
+        
+        });       
+        
     
     } 
     
@@ -36,9 +46,6 @@
         
         // the debug socket, if connected
         debug: null,
-        
-        // the droptables
-        settings: null, 
         
         // incrementing number used for game ids
         gamesSequenceNo: 0, 
@@ -67,10 +74,10 @@
         createItem: function(itemType, sourceLevel, magicFind, goldFind) {
         
             var item = null, 
-                blueprints, blueprint;
+                blueprints, blueprint, rank, quality;
             
             // let's grab all possible blueprints
-            blueprints = _.filter(this.settings.blueprints, function(bp) { 
+            blueprints = _.filter(Core.Settings.blueprints, function(bp) { 
             
                 return bp[1] <= sourceLevel && 
                        bp[2] >= sourceLevel && 
@@ -83,15 +90,15 @@
                 // get a random one from the list of blueprints 
                 // we want the whole entry back and use the value 
                 // behind index 3 as probability
-                blueprint = Utils.randomA(blueprints, true, 3); 
+                blueprint = Utils.randomB(blueprints, 3); 
                 
                 if (blueprint) {
                 
                     item = [
                         // flags
-                        blueprint[4], 
+                        blueprint[4].slice(), 
                         // settings
-                        blueprint[6]
+                        $.extend({}, true, blueprint[6])
                     ]; 
                     
                     switch (itemType) {
@@ -104,9 +111,39 @@
                             // i.e: level 1 sources drop between 1 and 2    
                             //      level 99 sources drop between 99 and 9802
                             // the result is multiplied by the goldFind value which is 
-                            // always at least 1                    
+                            // always at least 1                   
                             item[1].amount = Utils.randomInt(sourceLevel, sourceLevel * sourceLevel + 1) * goldFind;
-    
+                            break;
+                        
+                        case F.WEAPON:
+                        case F.ARMOR:
+                        case F.JEWELRY:
+                      
+                            // create an equipment drop
+                            // first calculate the rank
+                            rank = Utils.randomD(Core.Settings.itemRanks, sourceLevel);
+                            
+                            // store the item's rank
+                            item[0].push(rank);
+                            
+                            switch (rank) {
+                            
+                                case F.NORMAL: 
+                                
+                                    // quality
+                                    quality = Utils.randomD(Core.Settings.itemQualities, sourceLevel);
+
+                                    item[0].push(quality);
+                                    
+                                    this.changeAttribsByQuality(item, Core.Settings.itemQualities[K[quality]][3]);
+                                    
+                                    // sockets
+                                    this.addSockets(item);                             
+                                
+                                    break;
+                            
+                            }
+
                             break;
                     
                     }       
@@ -119,27 +156,70 @@
         
         }, 
         
-        drop: function(source, magicFind, goldFind) {
+        changeAttr: function(item, attr, multiplier) {
         
+            item[1][attr] = Math.max(1, item[1][attr] * multiplier);
+        
+        }, 
+        
+        changeAttribsByQuality: function(item, multiplier) {
+        
+            if (Utils.is(item, F.WEAPON)) {
+            
+                this.changeAttr(item, 'minDmg', multiplier);
+                this.changeAttr(item, 'maxDmg', multiplier);
+            
+            } else {
+            
+                this.changeAttr(item, 'armor', multiplier);    
+            
+            }
+        
+        }, 
+        
+        addSockets : function(item, socketCount) {
+        
+            var socketCount = socketCount || Utils.randomInt(Utils.blueprint(item[0])[7].sockets), 
+                i;
+            console.log('socketcount', socketCount);
+            if (socketCount > 0) {
+            
+                if (!Utils.is(item, F.SOCKETED)) {
+                
+                    item[0].push(F.SOCKETED);
+                    item[1].sockets = [];
+                
+                }
+                
+                for (i = 0; i < socketCount; i++) {
+                                        
+                    item[1].sockets.push(null);
+                                        
+                }                       
+            
+            }                           
+        
+        }, 
+        
+        drop: function(source, magicFind, goldFind) {
+           
             // create a drop based on source droptable and player level, 
             // gold find and magic find 
-            var dropTable = this.settings.droptables[source.droptable] || this.settings.droptables.default, 
+            var dropTable = Core.Settings.droptables[source.droptable] || Core.Settings.droptables.default, 
                 amount = Utils.randomA(dropTable.amount), 
-                drop = [], itemType, item, i;
+                drop = [], item, i;
             
             // if we encountered a null-drop, we don't do anything
             // otherwise we request [amount] items based on the droptable
             if (amount > 0) {       
             
                 for (i = 0; i < amount; i++) {
-                
+                    console.dir(dropTable);
                     // get a random item type, probabilities are 
                     // set in the droptable
-                    itemType = Utils.randomA(dropTable.items);
-                
                     item = this.createItem(
                         // the item type
-                        Utils.randomA(dropTable.items), 
+                        Utils.randomB(dropTable.items, 1)[0], 
                         // the source level
                         source.level || 1, 
                         // magic find
@@ -427,38 +507,6 @@
             
             }
     
-        }, 
-        
-        init: function() {
-        
-            // load the droptables
-            this.settings = require('./../store/settings.json');
-            
-            // pre-process the droptables
-            _.each(this.settings.droptables, function(dt) {
-            
-                _.each(dt.items, function(dti) {
-    
-                    dti[0] = F[dti[0].toUpperCase()];
-                
-                }, this);
-            
-            }, this);
-            
-            // pre-process the blueprints
-            _.each(this.settings.blueprints, function(bp) {
-            
-                for (var i = 0; i < bp[4].length; i++) {
-                
-                    bp[4][i] = F[bp[4][i].toUpperCase()];
-                
-                }
-            
-            }, this);
-            
-            // start server loop    
-            this.run();
-        
         }, 
         
         run: function() {

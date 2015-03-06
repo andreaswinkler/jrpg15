@@ -65,14 +65,43 @@
             ETHERAL: 43,
             GOLD: 44,
             HEALTHPOTION: 45,
-            AUTOPICKUP: 46                  
+            AUTOPICKUP: 46,
+            FLAWLESS: 47,
+            PERFECT: 48, 
+            SOCKETED: 49, 
+            INFERIOR: 50,
+            GOOD: 51, 
+            EXCEPTIONAL: 52, 
+            STANDARD: 53                
         }, 
+        
+        Settings: null, 
     
         dt: 0, 
     
-        check: function(e, condition1) {
+        init: function() {
         
-            return arguments.length - 1 == _.intersection(arguments[0][0], [].slice.call(arguments, 1)).length;
+            // pre-process the droptables
+            _.each(this.Settings.droptables, function(dt) {
+            
+                _.each(dt.items, function(dti) {
+    
+                    dti[0] = this.Flags[dti[0].toUpperCase()];
+                
+                }, this);
+            
+            }, this);
+            
+            // pre-process the blueprints
+            _.each(this.Settings.blueprints, function(bp) {
+            
+                for (var i = 0; i < bp[4].length; i++) {
+                
+                    bp[4][i] = this.Flags[bp[4][i].toUpperCase()];
+                
+                }
+            
+            }, this);
         
         }, 
     
@@ -263,6 +292,86 @@
         
         Utils: {
         
+            // check if an item matches all conditions
+            // i.e: the item contains all given flags
+            is: function(e, condition1) {
+        
+                return arguments.length - 1 == _.intersection(arguments[0][0], [].slice.call(arguments, 1)).length;
+            
+            }, 
+            
+            // get a blueprint for a set of flags
+            blueprint: function(flags) {
+            
+                var bp;
+
+                _.each(Core.Settings.blueprints, function(blueprint) {
+
+                    if (_.intersection(flags, blueprint[4]).length == blueprint[4].length) {
+                    
+                        bp = blueprint;
+                        return;    
+                    
+                    }
+                
+                });    
+                
+                return bp;
+            
+            },
+
+            // returns the name of an item/creature based on the flags
+            // flags are alway the first element, the name is the first 
+            // element in the blueprint
+            name: function(e) {
+            
+                return this.blueprint(e[0])[0];
+
+            }, 
+            
+            // displayName
+            displayName: function(e) {
+            
+                var name = this.name(e);
+            
+                if (this.is(e, Core.Flags.SOCKETED)) {
+                
+                    name = 'Socketed ' + name + ' [' + e[1].sockets.length + ']';
+                
+                }   
+                
+                if (this.is(e, Core.Flags.INFERIOR)) {
+                
+                    name = 'Inferior ' + name;
+                
+                } else if (this.is(e, Core.Flags.GOOD)) {
+                
+                    name = 'Good ' + name;
+                
+                } else if (this.is(e, Core.Flags.EXCEPTIONAL)) {
+                
+                    name = 'Exceptional ' + name;
+                
+                } else if (this.is(e, Core.Flags.ETHERAL)) {
+                
+                    name = 'Etheral ' + name;
+                
+                }
+                
+                if (this.is(e, Core.Flags.WEAPON)) {
+                
+                    name = name + ' { ' + e[1].minDmg.toFixed(1) + ' - ' + e[1].maxDmg.toFixed(1) + ', ' + ((e[1].minDmg + e[1].maxDmg) / 2 * e[1].as) + 'dps } ';
+                
+                } else if (this.is(e, Core.Flags.ARMOR)) {
+                
+                    name = name + ' { ' + e[1].armor.toFixed(0) + ' } ';
+                
+                }
+                
+                return name;     
+            
+            }, 
+        
             // calculate the distance between two positions in pixels
             distance: function(x, y, x2, y2) {
             
@@ -287,14 +396,20 @@
             
             // random value between min and max
             random: function(min, max) {
-            
+
                 return Math.random() * (max - min) + min;
             
             }, 
             
             // return a random int value
             randomInt: function(min, max) {
-            
+
+                if (max == undefined) {
+
+                    return Math.round(this.random(min[0], min[1]));
+                
+                }
+
                 return Math.round(this.random(min, max));
             
             }, 
@@ -305,12 +420,11 @@
             // e.g.: [[{object 1}, 0.2], [{object 2}, 0.8]]
             // in the example the method would return object 1 in 20% and 
             // object 2 in 80% of the cases
-            randomA: function(set, returnComplete, key) {
+            randomA: function(set) {
             
                 // get a random number and initialize v as 0
                 var r = Math.random(),
-                    returnComplete = returnComplete || false, 
-                    key = key || 1,  
+                    returnComplete = returnComplete || false,  
                     v = 0, i;
 
                 // we loop through the set and add up the probability each 
@@ -320,25 +434,70 @@
                 // individual elements correctly
                 for (i = 0; i < set.length; i++) {
                 
-                    v += set[i][key];
+                    v += set[i][1];
                 
                     if (r <= v) {
                     
-                        if (returnComplete) {
-                        
-                            return set[i];
-                        
-                        } else {
-                        
-                            return set[i][0];
-                        
-                        }
+                        return set[i][0];
                     
                     }    
                 
                 }
             
                 return null;
+            
+            },
+            
+            // random item from a set with different probabilities
+            // in this case the probabilities are relative
+            // i.e. grab all higher than the random number and 
+            // randomy choose one of the resulting
+            randomB: function(set, probabilityIndex) {
+            
+                // get a random number
+                var r = Math.random(),
+                // filter the set for all items with a higher probability 
+                // than the choosen random value 
+                    set = _.filter(set, function(i) { return i[probabilityIndex] >= r; });
+                
+                if (set.length > 0) {
+                
+                    // return a random item from the set
+                    return this.randomC(set);
+                
+                }
+                
+                return null;    
+            
+            }, 
+            
+            // random item from a list of items
+            randomC: function(set) {
+                
+                return set[this.randomInt(0, set.length - 1)];
+            
+            }, 
+            
+            // random item from a list filtered first by min/max level check
+            randomD: function(set, level) {
+            
+                var list = [];
+                
+                _.each(set, function(value, key) {
+                
+                    if (level >= value[1] && level <= value[2]) {
+                    
+                        list.push([Core.Flags[key], value[0]]);
+                    
+                    } else {
+                    
+                        list[0][1] += value[0];
+                    
+                    }
+                
+                });
+                
+                return this.randomA(list);
             
             }
         
@@ -348,10 +507,13 @@
     
     if (typeof module !== 'undefined') {
     
+        Core.Settings = require('./../store/settings.json');
+        Core.init();
+    
         module.exports = Core;
     
     } else {
-    
+        
         window.Core = Core;
     
     }
