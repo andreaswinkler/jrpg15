@@ -50,6 +50,17 @@
         // incrementing number used for game ids
         gamesSequenceNo: 0, 
         
+        // auto-increment id
+        _id: 0, 
+        
+        // get a new id
+        // TODO: change this to a persistent one
+        id: function() {
+        
+            return ++this._id;
+        
+        }, 
+        
         debugInfo: function() {
     
             if (this.debug) {
@@ -71,6 +82,13 @@
         
         }, 
         
+        randomName: function(item) {
+        
+            return Utils.randomA(['Vile', 'Evil', 'Azure', 'Cobalt', 'Mirror', 'Soul', 'Meat', 'Flesh', 'Skin', 'Moon', 'Sun', 'Neptune', 'Mars', 'Mercury', 'Venus', 'Earth', 'Jupiter', 'Saturn', 'Uranus']) + ' ' + 
+                   Utils.randomA(['Cutter', 'Knife', 'Shard', 'Edge', 'Steel', 'Point', 'Blade', 'Sabre', 'Shiv', 'Dagger', 'Ripper']);
+        
+        }, 
+        
         createItem: function(itemType, sourceLevel, magicFind, goldFind) {
         
             var item = null, 
@@ -88,17 +106,20 @@
             if (blueprints.length > 0) {
             
                 // get a random one from the list of blueprints 
-                // we want the whole entry back and use the value 
-                // behind index 3 as probability
-                blueprint = Utils.randomB(blueprints, 3); 
+                // use the value behind index 3 as probability
+                blueprint = Utils.randomP(blueprints, 3); 
                 
                 if (blueprint) {
                 
                     item = [
+                        // id
+                        this.id(), 
                         // flags
                         blueprint[4].slice(), 
                         // settings
-                        $.extend({}, true, blueprint[6])
+                        $.extend({}, true, blueprint[6]),
+                        // level
+                        sourceLevel
                     ]; 
                     
                     switch (itemType) {
@@ -112,7 +133,7 @@
                             //      level 99 sources drop between 99 and 9802
                             // the result is multiplied by the goldFind value which is 
                             // always at least 1                   
-                            item[1].amount = Utils.randomInt(sourceLevel, sourceLevel * sourceLevel + 1) * goldFind;
+                            item[2].amount = Utils.randomInt(sourceLevel, sourceLevel * sourceLevel + 1) * goldFind;
                             break;
                         
                         case F.WEAPON:
@@ -121,21 +142,38 @@
                       
                             // create an equipment drop
                             // first calculate the rank
-                            rank = Utils.randomD(Core.Settings.itemRanks, sourceLevel);
-                            
+                            // randomD returns [rankKey, rank]
+                            rank = Utils.randomL(Core.Settings.itemRanks, sourceLevel, 1, 2, 3);
+
                             // store the item's rank
-                            item[0].push(rank);
+                            item[1].push(rank[0]);
+
+                            switch (rank[0]) {
                             
-                            switch (rank) {
+                                case F.RARE:
+                                
+                                    this.addAffixes(item, Utils.randomP(rank[4], 1)[0]);
+                                    
+                                    item[2].name = this.randomName(item);
+                                    
+                                    break;
+                            
+                                case F.MAGIC: 
+                                
+                                    this.addAffixes(item, Utils.randomP(rank[4], 1)[0]);
+                                    
+                                    item[2].name = item[2].name.replace('#', blueprint[0]);
+                                
+                                    break;
                             
                                 case F.NORMAL: 
                                 
                                     // quality
-                                    quality = Utils.randomD(Core.Settings.itemQualities, sourceLevel);
+                                    quality = Utils.randomL(Core.Settings.itemQualities, sourceLevel, 1, 2, 3);
 
-                                    item[0].push(quality);
+                                    item[1].push(quality[0]);
                                     
-                                    this.changeAttribsByQuality(item, Core.Settings.itemQualities[K[quality]][3]);
+                                    this.changeAttribsByQuality(item, quality[4]);
                                     
                                     // sockets
                                     this.addSockets(item);                             
@@ -156,9 +194,95 @@
         
         }, 
         
+        // return a random affix from a list of affixes
+        // the method checks if the affix level corresponds to the item 
+        // level and if the affix is not already set on the item
+        randomAffix: function(item, affixes) {
+        
+            return Utils.randomL2(_.filter(affixes, function(a) {
+            
+                return !(item[2].affixes && item[2].affixes[a[5]]);
+            
+            }), item[3], item[1], 0, 1, 2, 3);
+        
+        }, 
+        
+        addPrefix: function(item, multiplier) {
+        
+            var prefix = this.randomAffix(item, Core.Settings.affixes.prefixes);
+            
+            item[2].name = prefix[4] + ' #';
+            
+            this.addAffix(item, prefix, multiplier);
+        
+        }, 
+        
+        addSuffix: function(item, multiplier) {
+        
+            var suffix = this.randomAffix(item, Core.Settings.affixes.suffixes);
+            
+            item[2].name = (item[2].name || '#') + ' ' + suffix[4];
+            
+            this.addAffix(item, suffix, multiplier);
+        
+        }, 
+        
+        addAffix: function(item, affix, multiplier) {
+        
+            var affix = affix || this.randomAffix(item, [].concat(Core.Settings.affixes.prefixes, Core.Settings.affixes.suffixes)),  
+                multiplier = multiplier || 1;
+
+            if (!item[2].affixes) {
+            
+                item[2].affixes = {};    
+            
+            }
+            
+            // assign the affix with a random value within the affix min/max
+            // range, the affix value cannot be lower than 1
+            item[2].affixes[affix[5]] = Math.max(1, Utils.randomInt(affix[6][0], affix[6][1]) * multiplier);
+        
+        }, 
+        
+        addAffixes: function(item, affixCount) {
+
+            var i;
+
+            if (affixCount == 1) {
+            
+                if (Math.random() > 0.5) {
+                
+                    this.addPrefix(item);
+                
+                } else {
+                
+                    this.addSuffix(item);
+                
+                }
+            
+            } else if (affixCount > 1) {
+            
+                this.addPrefix(item);
+                this.addSuffix(item);
+                
+                // add the rest of the affixes
+                if (affixCount > 2) {
+                
+                    for (i = 2; i < affixCount; i++) {
+                    
+                        this.addAffix(item);
+                    
+                    }
+                
+                }   
+            
+            }                    
+        
+        }, 
+        
         changeAttr: function(item, attr, multiplier) {
         
-            item[1][attr] = Math.max(1, item[1][attr] * multiplier);
+            item[2][attr] = Math.max(1, item[2][attr] * multiplier);
         
         }, 
         
@@ -179,21 +303,21 @@
         
         addSockets : function(item, socketCount) {
         
-            var socketCount = socketCount || Utils.randomInt(Utils.blueprint(item[0])[7].sockets), 
+            var socketCount = socketCount || Utils.randomInt(Utils.blueprint(item[1])[7].sockets), 
                 i;
-            console.log('socketcount', socketCount);
+
             if (socketCount > 0) {
             
                 if (!Utils.is(item, F.SOCKETED)) {
                 
-                    item[0].push(F.SOCKETED);
-                    item[1].sockets = [];
+                    item[1].push(F.SOCKETED);
+                    item[2].sockets = [];
                 
                 }
                 
                 for (i = 0; i < socketCount; i++) {
                                         
-                    item[1].sockets.push(null);
+                    item[2].sockets.push(null);
                                         
                 }                       
             
@@ -206,7 +330,7 @@
             // create a drop based on source droptable and player level, 
             // gold find and magic find 
             var dropTable = Core.Settings.droptables[source.droptable] || Core.Settings.droptables.default, 
-                amount = Utils.randomA(dropTable.amount), 
+                amount = Utils.randomP(dropTable.amount, 1)[0], 
                 drop = [], item, i;
             
             // if we encountered a null-drop, we don't do anything
@@ -214,12 +338,12 @@
             if (amount > 0) {       
             
                 for (i = 0; i < amount; i++) {
-                    console.dir(dropTable);
+
                     // get a random item type, probabilities are 
                     // set in the droptable
                     item = this.createItem(
                         // the item type
-                        Utils.randomB(dropTable.items, 1)[0], 
+                        Utils.randomP(dropTable.items, 1)[0], 
                         // the source level
                         source.level || 1, 
                         // magic find

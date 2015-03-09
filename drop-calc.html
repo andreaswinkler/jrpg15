@@ -18,12 +18,12 @@
 var F = Core.Flags;
 
 $(document).ready(function() {
-
+    
     $.getJSON('store/settings.json', function(d) {
 
         Core.Settings = d;
         Core.init();
-
+        
         var s = '';
         
         s += '<select class="droptable">';
@@ -44,7 +44,8 @@ $(document).ready(function() {
         
         $('.drop').click(function(ev) {
         
-            var drop = Server.drop({ droptable: $('.droptable').val(), level: parseInt($('.source-level').val()) }), 
+            var drop = Server.drop({ droptable: $('.droptable').val(), level: parseInt($('.source-level').val()) }),
+                cssClass = '',  
                 s = '';
             
             s += '<b>Drop produced ' + drop.length + ' item(s)</b>';
@@ -53,17 +54,43 @@ $(document).ready(function() {
             
                 s += '<br />';
                 
-                switch (i[0][0]) {
+                switch (i[1][0]) {
                 
                     case F.GOLD:
 
-                        s += '<br /><i>' + i[1].amount + ' ' + Core.Utils.name(i) + '</i>';
+                        s += '<br /><i>' + i[2].amount + ' ' + Core.Utils.name(i) + '</i>';
                          
                         break;
                     
                     default: 
                     
-                        s += '<br /><i>' + Core.Utils.displayName(i) + '</i>';
+                        cssClass = '';
+                    
+                        if (Core.Utils.is(i, Core.Flags.MAGIC)) {
+                        
+                            cssClass = 'blue';
+                        
+                        } else if (Core.Utils.is(i, Core.Flags.RARE)) {
+                        
+                            cssClass = 'yellow';
+                        
+                        } else if (Core.Utils.is(i, Core.Flags.SOCKETED)) {
+                        
+                            cssClass = 'grey';
+                        
+                        }
+                    
+                        s += '<br /><i' + (cssClass ? ' class="' + cssClass + '"' : '') + '>' + Core.Utils.displayName(i) + '</i>';
+                        
+                        if (i[2].affixes) {
+                        
+                            _.each(i[2].affixes, function(v, k) {
+                            
+                                 s += '<br /> --&gt; ' + Core.Settings.labels[k].replace('#', v);    
+                            
+                            });
+                        
+                        }
                         
                         break;
                 
@@ -77,7 +104,7 @@ $(document).ready(function() {
         
         }); 
 
-    });
+    }).error(function(err) { console.dir(err); });
 
 });
 

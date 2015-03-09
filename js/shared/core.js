@@ -72,7 +72,8 @@
             INFERIOR: 50,
             GOOD: 51, 
             EXCEPTIONAL: 52, 
-            STANDARD: 53                
+            STANDARD: 53, 
+            ITEM: 54                
         }, 
         
         Settings: null, 
@@ -100,6 +101,40 @@
                     bp[4][i] = this.Flags[bp[4][i].toUpperCase()];
                 
                 }
+            
+            }, this);
+            
+            // pre-process the affixes
+            _.each(this.Settings.affixes.prefixes, function(a) {
+            
+                for (var i = 0; i < a[3].length; i++) {
+                
+                    a[3][i] = this.Flags[a[3][i].toUpperCase()];
+                
+                }
+            
+            }, this);
+            
+            // pre-process the affixes
+            _.each(this.Settings.affixes.suffixes, function(a) {
+            
+                for (var i = 0; i < a[3].length; i++) {
+                
+                    a[3][i] = this.Flags[a[3][i].toUpperCase()];
+                
+                }
+            
+            }, this);
+            
+            _.each(this.Settings.itemRanks, function(i) {
+            
+                i[0] = this.Flags[i[0].toUpperCase()];
+            
+            }, this);
+            
+            _.each(this.Settings.itemQualities, function(i) {
+            
+                i[0] = this.Flags[i[0].toUpperCase()];
             
             }, this);
         
@@ -296,7 +331,7 @@
             // i.e: the item contains all given flags
             is: function(e, condition1) {
         
-                return arguments.length - 1 == _.intersection(arguments[0][0], [].slice.call(arguments, 1)).length;
+                return arguments.length - 1 == _.intersection(arguments[0][1], [].slice.call(arguments, 1)).length;
             
             }, 
             
@@ -325,7 +360,7 @@
             // element in the blueprint
             name: function(e) {
             
-                return this.blueprint(e[0])[0];
+                return e[2].name || this.blueprint(e[1])[0];
 
             }, 
             
@@ -336,9 +371,9 @@
             
                 if (this.is(e, Core.Flags.SOCKETED)) {
                 
-                    name = 'Socketed ' + name + ' [' + e[1].sockets.length + ']';
+                    name = 'Socketed ' + name + ' [' + e[2].sockets.length + ']';
                 
-                }   
+                } 
                 
                 if (this.is(e, Core.Flags.INFERIOR)) {
                 
@@ -360,15 +395,99 @@
                 
                 if (this.is(e, Core.Flags.WEAPON)) {
                 
-                    name = name + ' { ' + e[1].minDmg.toFixed(1) + ' - ' + e[1].maxDmg.toFixed(1) + ', ' + ((e[1].minDmg + e[1].maxDmg) / 2 * e[1].as) + 'dps } ';
+                    name = name + ' { ' + this.attr(e, 'minDmg').toFixed(1) + ' - ' + this.attr(e, 'maxDmg').toFixed(1) + ', ' + this.dps(e).toFixed(1) + 'dps } ';
                 
                 } else if (this.is(e, Core.Flags.ARMOR)) {
                 
-                    name = name + ' { ' + e[1].armor.toFixed(0) + ' } ';
+                    name = name + ' { ' + e[2].armor.toFixed(0) + ' } ';
                 
                 }
                 
                 return name;     
+            
+            }, 
+            
+            attr: function(e, a) {
+                
+                var v;
+            
+                if (this.is(e, Core.Flags.ITEM)) {
+                
+                    if (e[2][a]) {
+                    
+                        v = e[2][a];
+                    
+                    }
+                    
+                    if (e[2].affixes && e[2].affixes[a]) {
+                    
+                        if (v) {
+                        
+                            if (a.indexOf('_p') != -1) {
+                        
+                                v *= e[2].affixes[a];
+                            
+                            } else {
+                            
+                                v += e[2].affixes[a];
+                            
+                            }
+                        
+                        } else {
+                        
+                            v = e[2].affixes[a];
+                        
+                        }
+                    
+                    }
+                
+                }
+                
+                //console.log(a, v, e);
+                
+                return v;
+            
+            },
+            
+            attrP: function(e, a, base) {
+            
+                return (this.attr(e, a) || 0) / 100 + (base || 1);
+            
+            },  
+            
+            attackSpeed: function(e) {
+            
+                if (this.is(e, Core.Flags.WEAPON)) {
+                
+                    return this.attr(e, 'as') * this.attrP(e, 'ias_p');
+                
+                }
+            
+            }, 
+            
+            damage: function(e) {
+            
+                if (this.is(e, Core.Flags.WEAPON)) {
+                    
+                    return ((this.attr(e, 'minDmg') + this.attr(e, 'maxDmg')) / 2) * this.attrP(e, 'dmg_p');
+                  
+                }
+            
+            }, 
+            
+            dps: function(e) {
+            
+                var dmg;
+            
+                if (this.is(e, Core.Flags.WEAPON)) {
+                                                                                                    
+                    dmg = this.damage(e);
+                    
+                    return (dmg + (dmg * this.attrP(e, 'critDmg_p') * this.attrP(e, 'critChance_p', 0))) * this.attackSpeed(e);  
+                
+                } 
+                
+                return dps;  
             
             }, 
         
@@ -414,19 +533,25 @@
             
             }, 
             
-            // random item from a set with different probabilities
-            // set is a list of arrays where [0] holds the element
-            // and [1] holds the probability (0 = 0%, 1 = 100%)
-            // e.g.: [[{object 1}, 0.2], [{object 2}, 0.8]]
-            // in the example the method would return object 1 in 20% and 
-            // object 2 in 80% of the cases
+            // random item from a list of items
             randomA: function(set) {
+            
+                return set[this.randomInt(0, set.length - 1)];    
+            
+            }, 
+            
+            // random item from a set with different probabilities
+            // set is a list of arrays where [index] 
+            // holds the probability (0 = 0%, 1 = 100%)
+            // e.g.: [[123, 0.2, 'abc'], [234, 0.8, 'cdx']]
+            // in the example the method would return element 1 in 20% and 
+            // element 2 in 80% of the cases
+            randomP: function(set, probabilityIndex) {
             
                 // get a random number and initialize v as 0
                 var r = Math.random(),
-                    returnComplete = returnComplete || false,  
-                    v = 0, i;
-
+                    v = 0, i; 
+                
                 // we loop through the set and add up the probability each 
                 // iteration. if the probability is larger than the random 
                 // number we've found our element  
@@ -434,25 +559,25 @@
                 // individual elements correctly
                 for (i = 0; i < set.length; i++) {
                 
-                    v += set[i][1];
+                    v += set[i][probabilityIndex];
                 
                     if (r <= v) {
-                    
-                        return set[i][0];
+
+                        return set[i];
                     
                     }    
                 
                 }
             
-                return null;
+                return null;       
             
-            },
+            }, 
             
             // random item from a set with different probabilities
             // in this case the probabilities are relative
             // i.e. grab all higher than the random number and 
             // randomy choose one of the resulting
-            randomB: function(set, probabilityIndex) {
+            randomP2: function(set, probabilityIndex) {
             
                 // get a random number
                 var r = Math.random(),
@@ -463,43 +588,36 @@
                 if (set.length > 0) {
                 
                     // return a random item from the set
-                    return this.randomC(set);
+                    return this.randomA(set);
                 
                 }
                 
-                return null;    
-            
-            }, 
-            
-            // random item from a list of items
-            randomC: function(set) {
-                
-                return set[this.randomInt(0, set.length - 1)];
+                return null;            
             
             }, 
             
             // random item from a list filtered first by min/max level check
-            randomD: function(set, level) {
+            randomL: function(set, level, probabilityIndex, minLevelIndex, maxLevelIndex) {
+
+                return this.randomP2(_.filter(set, function(i) {
+                
+                    return level >= i[minLevelIndex] && level <= i[maxLevelIndex];
+                
+                }), probabilityIndex);
             
-                var list = [];
-                
-                _.each(set, function(value, key) {
-                
-                    if (level >= value[1] && level <= value[2]) {
-                    
-                        list.push([Core.Flags[key], value[0]]);
-                    
-                    } else {
-                    
-                        list[0][1] += value[0];
-                    
-                    }
-                
-                });
-                
-                return this.randomA(list);
+            }, 
             
-            }
+            // random item from a list filtered by min/max level check and 
+            // flags
+            randomL2: function(set, level, flags, probabilityIndex, minLevelIndex, maxLevelIndex, flagIndex) {
+            
+                return this.randomL(_.filter(set, function(i) {
+                
+                    return _.intersection(i[flagIndex], flags).length > 0;
+                
+                }), level, probabilityIndex, minLevelIndex, maxLevelIndex);
+            
+            }          
         
         }
     
