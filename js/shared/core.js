@@ -354,6 +354,13 @@
                 return bp;
             
             },
+            
+            // return the maxmimum amount of sockets a given item can have
+            maxSockets: function(item) {
+            
+                return ((((this.blueprint(item[1]) || [])[7] || {}).sockets || [])[1] || 0);   
+            
+            }, 
 
             // returns the name of an item/creature based on the flags
             // flags are alway the first element, the name is the first 
@@ -369,7 +376,7 @@
             
                 var name = this.name(e);
             
-                if (this.is(e, Core.Flags.SOCKETED)) {
+                if (this.is(e, Core.Flags.SOCKETED, Core.Flags.NORMAL)) {
                 
                     name = 'Socketed ' + name + ' [' + e[2].sockets.length + ']';
                 

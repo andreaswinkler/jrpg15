@@ -89,108 +89,104 @@
         
         }, 
         
-        createItem: function(itemType, sourceLevel, magicFind, goldFind) {
+        // get a random blueprint based on the item type and source level
+        randomBlueprint: function(itemType, level) {
         
-            var item = null, 
-                blueprints, blueprint, rank, quality;
+            return Utils.randomP(_.filter(Core.Settings.blueprints, function(i) {
             
-            // let's grab all possible blueprints
-            blueprints = _.filter(Core.Settings.blueprints, function(bp) { 
+                return i[1] <= level && i[2] >= level && i[4].indexOf(itemType) != -1;
             
-                return bp[1] <= sourceLevel && 
-                       bp[2] >= sourceLevel && 
-                       bp[4].indexOf(itemType) != -1; 
+            }), 3);
+        
+        }, 
+        
+        createItem: function(itemType, sourceLevel, magicFind, goldFind, blueprint) {
+        
+            var blueprint = blueprint || this.randomBlueprint(itemType, sourceLevel), 
+                item = null, 
+                rank, quality;
+          
+            if (blueprint) {
             
-            });
-            
-            if (blueprints.length > 0) {
-            
-                // get a random one from the list of blueprints 
-                // use the value behind index 3 as probability
-                blueprint = Utils.randomP(blueprints, 3); 
+                item = [
+                    // id
+                    this.id(), 
+                    // flags
+                    blueprint[4].slice(), 
+                    // settings
+                    $.extend({}, true, blueprint[6]),
+                    // level
+                    sourceLevel
+                ]; 
                 
-                if (blueprint) {
+                switch (itemType) {
                 
-                    item = [
-                        // id
-                        this.id(), 
-                        // flags
-                        blueprint[4].slice(), 
-                        // settings
-                        $.extend({}, true, blueprint[6]),
-                        // level
-                        sourceLevel
-                    ]; 
+                    case F.GOLD: 
                     
-                    switch (itemType) {
-                    
-                        case F.GOLD: 
-                    
-                            // create a gold drop
-                            // the amount will be somewhere between the source's level and 
-                            // the source's level square + 1
-                            // i.e: level 1 sources drop between 1 and 2    
-                            //      level 99 sources drop between 99 and 9802
-                            // the result is multiplied by the goldFind value which is 
-                            // always at least 1                   
-                            item[2].amount = Utils.randomInt(sourceLevel, sourceLevel * sourceLevel + 1) * goldFind;
-                            break;
+                        // create a gold drop
+                        // the amount will be somewhere between the source's level and 
+                        // the source's level square + 1
+                        // i.e: level 1 sources drop between 1 and 2    
+                        //      level 99 sources drop between 99 and 9802
+                        // the result is multiplied by the goldFind value which is 
+                        // always at least 1                   
+                        item[2].amount = Utils.randomInt(sourceLevel, sourceLevel * sourceLevel + 1) * goldFind;
                         
-                        case F.WEAPON:
-                        case F.ARMOR:
-                        case F.JEWELRY:
-                      
-                            // create an equipment drop
-                            // first calculate the rank
-                            // randomD returns [rankKey, rank]
-                            rank = Utils.randomL(Core.Settings.itemRanks, sourceLevel, 1, 2, 3);
-
-                            // store the item's rank
-                            item[1].push(rank[0]);
-
-                            switch (rank[0]) {
-                            
-                                case F.RARE:
-                                
-                                    this.addAffixes(item, Utils.randomP(rank[4], 1)[0]);
-                                    
-                                    item[2].name = this.randomName(item);
-                                    
-                                    break;
-                            
-                                case F.MAGIC: 
-                                
-                                    this.addAffixes(item, Utils.randomP(rank[4], 1)[0]);
-                                    
-                                    item[2].name = item[2].name.replace('#', blueprint[0]);
-                                
-                                    break;
-                            
-                                case F.NORMAL: 
-                                
-                                    // quality
-                                    quality = Utils.randomL(Core.Settings.itemQualities, sourceLevel, 1, 2, 3);
-
-                                    item[1].push(quality[0]);
-                                    
-                                    this.changeAttribsByQuality(item, quality[4]);
-                                    
-                                    // sockets
-                                    this.addSockets(item);                             
-                                
-                                    break;
-                            
-                            }
-
-                            break;
+                        break;
                     
-                    }       
+                    case F.WEAPON:
+                    case F.ARMOR:
+                    case F.JEWELRY:
+                  
+                        // create an equipment drop
+                        // first calculate the rank
+                        // randomD returns [rankKey, rank]
+                        rank = rank || Utils.randomL(Core.Settings.itemRanks, sourceLevel, 1, 2, 3);
+
+                        // store the item's rank
+                        item[1].push(rank[0]);
+
+                        switch (rank[0]) {
+                        
+                            case F.RARE:
+                            
+                                this.addAffixes(item, Utils.randomP(rank[4], 1)[0]);
+                                
+                                item[2].name = this.randomName(item);
+                                
+                                break;
+                        
+                            case F.MAGIC: 
+                            
+                                this.addAffixes(item, Utils.randomP(rank[4], 1)[0]);
+                                
+                                item[2].name = item[2].name.replace('#', blueprint[0]);
+                            
+                                break;
+                        
+                            case F.NORMAL: 
+                            
+                                // quality
+                                quality = Utils.randomL(Core.Settings.itemQualities, sourceLevel, 1, 2, 3);
+
+                                item[1].push(quality[0]);
+                                
+                                this.changeAttribsByQuality(item, quality[4]);
+                                
+                                // sockets
+                                this.addSockets(item);                             
+                            
+                                break;
+                        
+                        }
+
+                        break;     
                 
-                }   
+                }    
             
-            }  
+            }
             
-            return item;        
+            return item;
         
         }, 
         
@@ -230,7 +226,8 @@
         addAffix: function(item, affix, multiplier) {
         
             var affix = affix || this.randomAffix(item, [].concat(Core.Settings.affixes.prefixes, Core.Settings.affixes.suffixes)),  
-                multiplier = multiplier || 1;
+                multiplier = multiplier || 1, 
+                value = Math.max(1, Utils.randomInt(affix[6][0], affix[6][1]));
 
             if (!item[2].affixes) {
             
@@ -238,10 +235,22 @@
             
             }
             
-            // assign the affix with a random value within the affix min/max
-            // range, the affix value cannot be lower than 1
-            item[2].affixes[affix[5]] = Math.max(1, Utils.randomInt(affix[6][0], affix[6][1]) * multiplier);
-        
+            if (affix[5] == 'sockets') {
+            
+                if (this.addSockets(item, value)) {
+                
+                    item[2].affixes[affix[5]] = value;    
+                
+                }   
+            
+            } else {
+            
+                // assign the affix with a random value within the affix min/max
+                // range, the affix value cannot be lower than 1
+                item[2].affixes[affix[5]] = value * multiplier;
+            
+            }
+
         }, 
         
         addAffixes: function(item, affixCount) {
@@ -303,10 +312,14 @@
         
         addSockets : function(item, socketCount) {
         
-            var socketCount = socketCount || Utils.randomInt(Utils.blueprint(item[1])[7].sockets), 
+            var maxSockets = Utils.maxSockets(item), 
+                socketCount = socketCount || Utils.randomInt(Utils.blueprint(item[1])[7].sockets), 
                 i;
 
-            if (socketCount > 0) {
+            // make sure we
+            // - add at least one socket
+            // - dont add more sockets we're allowed to do
+            if (socketCount > 0 && (item[2].sockets || []).length + socketCount <= maxSockets) {
             
                 if (!Utils.is(item, F.SOCKETED)) {
                 
@@ -319,9 +332,13 @@
                                         
                     item[2].sockets.push(null);
                                         
-                }                       
+                }    
+                
+                return true;                   
             
-            }                           
+            }               
+            
+            return false;            
         
         }, 
         

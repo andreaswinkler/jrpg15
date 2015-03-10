@@ -1,3 +1,6 @@
+2015-03-10/1
+Drop System Work (socket affix)
+
 2015-03-09/3
 Work on drop system
 Changed random-methods
