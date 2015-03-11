@@ -632,7 +632,7 @@
     
     if (typeof module !== 'undefined') {
     
-        Core.Settings = require('./../store/settings.json');
+        Core.Settings = require('./../../store/settings.json');
         Core.init();
     
         module.exports = Core;

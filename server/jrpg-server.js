@@ -8,7 +8,7 @@
     
             var _ = require('../js/underscore.min.js');
             var fs = require('fs');
-            var Core = require('../js/shared/core.js'); 
+            var Core = require('../js/shared/core.js');
         
         } else if (this._) {
             
@@ -522,6 +522,9 @@
             // bind the socket to the current game id
             socket.gameId = game.id;
             
+            // bind the socket to the current map id
+            socket.mapId = 'playground';
+            
             this.debugInfo(); 
             
             this.lobbyInfo();
@@ -535,16 +538,16 @@
         // game
         onClientGameLoaded: function(socket, data) {
         
-            this.addElement(socket.gameId, socket.player.hero);
+            this.addElement(socket.gameId, socket.mapId, socket.player.hero);
         
         }, 
         
         // add an element to a game state and inform everyone about it
-        addElement: function(gameId, element) {
+        addElement: function(gameId, mapId, element) {
         
             var game = this.game(gameId);
             
-            game.state.elements.push(element);
+            game.state.maps[mapId].state.elements.push(element);
             
             this.broadcast(_.pluck(game.players, 'socket'), 'createelement', element);
         

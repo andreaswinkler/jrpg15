@@ -12,6 +12,12 @@ var UI = {
     // the current screen
     currentScreen: null, 
 
+    // the ui controls/elements
+    elements: {}, 
+
+    // the mouse position
+    mouse: { x: 0, y: 0 }, 
+
     // initialize the UI by passing a parent DOM element (e.g. body)
     init: function() {
     
@@ -45,6 +51,13 @@ var UI = {
         });
     
     },
+    
+    update: function() {
+    
+        //this.updateElement('life', Game.hero.life_c, Game.hero.life); 
+        //this.updateElement('mana', Game.hero.mana_c, Game.hero.mana); 
+    
+    }, 
     
     exists: function(key) {
 
@@ -177,6 +190,48 @@ var UI = {
     
     },  
     
+    initGlobe: function(key) {
+    
+        return $('<div id="globe_' + key + '" class="globe"><div class="current"></div><span class="value" /></div>');
+    
+    },
+    
+    initField: function(key, value, callback, tooltip, amount) {
+    
+        var e = $('<div id="field_' + key + '" class="field ' + key + (value ? '' : ' locked') + '" data-event="' + key + '"></div>');
+        
+        if (tooltip) {
+        
+            e.get(0).tooltip = $('<div class="tooltip">' + tooltip + '</div>');
+            
+            e.mouseenter(function(ev) {
+            
+                this.tooltip.appendTo(this);
+            
+            }).mouseleave(function(ev) {
+            
+                $(this).find('.tooltip').remove();
+            
+            });
+        
+        }
+        
+        if (amount) {
+        
+            e.append('<span class="amount"></span>');
+        
+        }
+        
+        if (value && callback) {
+        
+            e.click(callback);
+        
+        }
+        
+        return e;
+    
+    },  
+    
     // initialize the loading screen by adding the necessary 
     // dom elements
     initLoadingScreen: function() {
@@ -193,13 +248,35 @@ var UI = {
     initGameScreen: function() {
     
         var e = UI.initScreen('game'), 
-            gameScreen = $('<div id="game_container" class="fullscreen"></div>');
+            gameContainer = $('<div id="game_container" class="fullscreen"></div>'), 
+            controlsContainer = $('<div id="game_controls" class="fullscreen"></div>'),
+            mainControlsContainer = $('<div id="game_main_controls"></div>'),  
+            minimapContainer = $('<div id="game_minimap"></div>');
         
-        e.append(gameScreen);
+        // append renderer container
+        e.append(gameContainer);
         
-        Renderer.init(gameScreen);
+        // append controls container
+        e.append(controlsContainer);
         
-        gameScreen.click(function(ev) {
+        // append minimap
+        e.append(minimapContainer);  
+        
+        controlsContainer.append(mainControlsContainer);              
+        
+        this.elements.life = UI.initGlobe('life').appendTo(mainControlsContainer);
+        this.elements.xp = UI.progressBar('xp').appendTo(mainControlsContainer); 
+        this.elements.skill1 = UI.initField('skill2', null, UI.onFieldClick, 'Locked Skill [1]').appendTo(mainControlsContainer);
+        this.elements.skill1 = UI.initField('skill3', null, UI.onFieldClick, 'Locked Skill [2]').appendTo(mainControlsContainer);
+        this.elements.skill1 = UI.initField('skill4', null, UI.onFieldClick, 'Locked Skill [3]').appendTo(mainControlsContainer);
+        this.elements.skill1 = UI.initField('skill5', null, UI.onFieldClick, 'Locked Skill [4]').appendTo(mainControlsContainer);
+        this.elements.skill1 = UI.initField('skill0', null, UI.onFieldClick, 'Locked Skill (left click)').appendTo(mainControlsContainer);
+        this.elements.skill1 = UI.initField('skill1', null, UI.onFieldClick, 'Locked Skill (right click)').appendTo(mainControlsContainer);
+        this.elements.mana = UI.initGlobe('mana').appendTo(mainControlsContainer);
+        
+        Renderer.init(gameContainer, minimapContainer);
+        
+        gameContainer.click(function(ev) {
         
             ev.preventDefault();
         
@@ -210,6 +287,11 @@ var UI = {
             ev.preventDefault();
         
             return UI.onGameScreenClick(1, ev.pageX, ev.pageY);
+        
+        }).mousemove(function(ev) {
+        
+            UI.mouse.x = ev.pageX;
+            UI.mouse.y = ev.pageY;
         
         });
     
@@ -226,6 +308,20 @@ var UI = {
             UI.currentScreen.find('.' + ev).remove();
         
         }
+    
+    }, 
+    
+    // handle clicks to control fields (e.g. a skill)
+    onFieldClick: function(ev) {
+    
+        // we pass in the current mouse position, maybe the 
+        // following action needs it (e.g. target a skill to the 
+        // pointed out location
+        var pos = Renderer.globalize(UI.mouse.x, UI.mouse.y);
+        
+        Game.handleEvent($(ev.target).attr('data-event'), pos.x, pos.y);
+        
+        return false;
     
     }, 
     

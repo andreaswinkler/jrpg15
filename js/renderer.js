@@ -32,18 +32,20 @@ var Renderer = {
     localRoot: { x: 0, y: 0 }, 
     // the dom element (jquery object) containing the game 
     // screen
-    container: null,   
-
+    container: null,
+    // the dom element (jquery object) holding the minimap
+    minimapContainer: null,   
 
     // initialize the renderer by passing in a jquery object as 
     // parent
     // here all layers are created, appended to the DOM and 
     // adjusted to the container size
-    init: function(container) {
+    init: function(container, minimapContainer) {
     
         var layer;
     
         Renderer.container = container;
+        Renderer.minimapContainer = minimapContainer;
     
         // let's set all our size attributes based on the 
         // given container

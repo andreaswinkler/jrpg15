@@ -6,6 +6,9 @@ var Game = {
     // is the game running?
     running: false, 
     
+    // the hero reference
+    hero: null, 
+    
     // the request animation frame object
     rAF: window.requestAnimationFrame || 
          window.mozRequestAnimationFrame || 
@@ -96,6 +99,8 @@ var Game = {
     // this is used to deal with the events passed in either by user interaction
     // from the UI class or by server commands from the Net class
     handleEvent: function(event, x, y) {
+    
+        console.log('handleEvent', event, x, y);
     
         switch (event) {
         
