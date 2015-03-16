@@ -73,7 +73,26 @@
             GOOD: 51, 
             EXCEPTIONAL: 52, 
             STANDARD: 53, 
-            ITEM: 54                
+            ITEM: 54,
+            HAND: 55, 
+            EQUIPMENT: 56, 
+            INVENTORY: 57, 
+            STASH_TAB0: 58, 
+            STASH_TAB1: 59,
+            STASH_TAB2: 60, 
+            STASH_TAB3: 61,
+            DROP: 62,
+            BLACKSMITH: 63, 
+            VENDOR0: 64, 
+            WEAPON1: 65, 
+            WEAPON2: 66, 
+            OFFHAND1: 67, 
+            OFFHAND2: 68, 
+            TOKEN1: 69, 
+            TOKEN2: 70, 
+            TOKEN3: 71, 
+            RING1: 72, 
+            RING2: 73                
         }, 
         
         Settings: null, 
@@ -448,6 +467,10 @@
                     
                     }
                 
+                } else if (e[a]) {
+                
+                    v = e[a];    
+                
                 }
                 
                 //console.log(a, v, e);
@@ -624,7 +647,76 @@
                 
                 }), level, probabilityIndex, minLevelIndex, maxLevelIndex);
             
-            }          
+            }, 
+            
+            // returns an empty grid of given dimensions
+            createGrid: function(rows, cols) {
+        
+                var grid = [], 
+                    i, j;
+              
+                for (i = 0; i < rows; i++) {
+                
+                    grid.push([]);
+                    
+                    for (j = 0; j < cols; j++) {
+                    
+                        grid[i].push(0);
+                    
+                    }
+                
+                }
+
+            }, 
+            
+            // return the slot for a given item
+            // slot hint is used to indicate e.g. weapon2, token3 or ring2
+            slot: function(item, slotHint) {
+            
+                var F = Core.Flags, 
+                    a = [
+                        [F.WEAPON, [F.WEAPON1, F.WEAPON2]], 
+                        [F.TOKEN, [F.TOKEN1, F.TOKEN2, F.TOKEN3]], 
+                        [F.RING, [F.RING1, F.RING2]],
+                        [F.OFFHAND, [F.OFFHAND1, F.OFFHAND2]],  
+                        [F.AMULET], 
+                        [F.HEADPIECE], 
+                        [F.CHESTARMOR], 
+                        [F.BOOTS], 
+                        [F.GLOVES], 
+                        [F.PANTS], 
+                        [F.BRACERS], 
+                        [F.SHOULDERS] 
+                    ], 
+                    slot, i;
+                
+                for (i = 0; i < a.length; i++) {
+                
+                    if (this.is(item, a[i][0])) {
+                    
+                        if (a[i].length == 1) {
+                        
+                            return a[i][0];
+                        
+                        }
+                    
+                    } else {
+                    
+                        if (a[i][1].indexOf(slotHint) != -1) {
+                        
+                            return slotHint;
+                        
+                        } else {
+                        
+                            return a[i][0];
+                        
+                        }
+                    
+                    }
+                
+                }
+            
+            }           
         
         }
     

@@ -84,8 +84,8 @@
         
         randomName: function(item) {
         
-            return Utils.randomA(['Vile', 'Evil', 'Azure', 'Cobalt', 'Mirror', 'Soul', 'Meat', 'Flesh', 'Skin', 'Moon', 'Sun', 'Neptune', 'Mars', 'Mercury', 'Venus', 'Earth', 'Jupiter', 'Saturn', 'Uranus']) + ' ' + 
-                   Utils.randomA(['Cutter', 'Knife', 'Shard', 'Edge', 'Steel', 'Point', 'Blade', 'Sabre', 'Shiv', 'Dagger', 'Ripper']);
+            return Utils.randomA(Core.Settings.rareNames1) + ' ' + 
+                   Utils.randomA(Core.Settings.rareNames2);
         
         }, 
         
@@ -116,7 +116,9 @@
                     // settings
                     $.extend({}, true, blueprint[6]),
                     // level
-                    sourceLevel
+                    sourceLevel,
+                    // location
+                    F.DROP
                 ]; 
                 
                 switch (itemType) {
@@ -397,10 +399,12 @@
                 socket.player = player;
                 player.socket = socket;
                 
-                // temp player-specific items
-                player.items = {
-                    vendors: {}, 
-                    drops: {}
+                players.spaces = {
+                    inventory: [F.INVENTORY].concat(Core.Settings.settings.inventory_dimensions),
+                    stash0: [F.STASH0].concat(Core.Settings.settings.stash_dimensions), 
+                    stash1: [F.STASH1].concat(Core.Settings.settings.stash_dimensions), 
+                    stash2: [F.STASH2].concat(Core.Settings.settings.stash_dimensions), 
+                    stash3: [F.STASH3].concat(Core.Settings.settings.stash_dimensions)         
                 };
                 
                 this.players.push(player);
@@ -694,6 +698,354 @@
                     e.socket.tsLastSaved = ts;   
                 
                 }
+            
+            }, this);
+        
+        }, 
+        
+        // get a player's item based on the itemId
+        item: function(player, itemId) {
+        
+            return _.find(player.items, function(i) { return i[0] == itemId; });    
+        
+        },
+        
+        // return the first item the player has stored in a given location
+        // optionally details can be provided to indicate e.g. an equipment 
+        // slot
+        itemByLocation: function(player, location, detail) {
+        
+            return _.find(player.items, function(i) { 
+            
+                return i[4][0] == location && (detail ? i[4][1] == detail : true);
+            
+            });
+        
+        },
+        
+        // return all items the player has stored in a given location
+        // optionally details can be provided to indicate e.g. an equipment 
+        // slot
+        itemsByLocation: function(player, location, detail) {
+        
+            return _.filter(player.items, function(i) {
+                        
+                return i[4][0] == location && (detail ? i[4][1] == detail : true);    
+            
+            });
+        
+        },   
+        
+        // change the location of an item by passing in a location flag
+        // optionally a more detailed information can be provided to indicate 
+        // e.g. an equipment slot, a grid position or global map coordinates
+        changeItemLocation: function(item, location, detail) {
+        
+            item[4] = [location, detail];
+        
+        }, 
+        
+        // put an item from anywhere (must belong to the player) into 
+        // the players hand 
+        grab: function(socket, itemId) {
+        
+            var item = this.item(socket.player, itemId), 
+                spaceKey;
+            
+            if (item) {
+            
+                // check if we need to remove the item from a space 
+                // e.g.: inventory or stash
+                spaceKey = _.find(socket.player.spaces, function(i) { return i[0] == item[4][0]; });
+                
+                if (spaceKey) {
+                
+                    this.removeItemFromSpace(socket.player, spaceKey, item);    
+                
+                }
+                
+                // we move the item to the hand
+                this.changeItemLocation(item, F.HAND); 
+            
+            }
+        
+        },
+        
+        // try to put the item in hand in the inventory
+        putToInventory: function(socket) {
+        
+            // get the item the player has currently in hand
+            var item = this.itemByLocation(socket.player, F.HAND);
+            
+            // if we could find one we add it to the inventory
+            if (item) {
+            
+                this.addItemToSpace(socket.player, 'inventory', item);
+            
+            }
+        
+        }, 
+        
+        // we're asked to pickup an item, let's make some things sure before 
+        // we do:
+        // - the item is actually a drop
+        // - player needs to be within pickup range
+        // - if item is gold we add it directly to the balance
+        pickup: function(socket, itemId) {
+        
+            // get the item 
+            var item = this.item(socket.player, itemId);
+            
+            if (item && item[4][0] == F.DROP && Utils.distance(socket.player.hero.x, socket.player.hero.y, item[4][1][0], item[4][1][1]) <= Utils.attr(socket.player.hero, 'pickupradius'))) {
+                
+                if (Utils.is(item, F.GOLD)) {
+                
+                    player.balance += item[2].amount;
+                    
+                    this.destroyItem(player, item);
+                
+                } else {
+                
+                    this.grab(socket, itemId);
+                    this.putToInventory(socket);
+                
+                }           
+            
+            }
+        
+        }, 
+        
+        // equip an item
+        // this can only be done from hand or from inventory
+        equip: function(socket, itemId, slotHint) {
+        
+            // get the item
+            var item = this.item(socket.player, itemId);
+            
+            if (item && [F.HAND, F.INVENTORY].indexOf(item[4][0]) != -1) {
+            
+                if (item[4][0] == F.INVENTORY) {
+                
+                    this.grab(socket, itemId);
+                
+                } 
+                
+                this.changeItemLocation(item, F.EQUIPMENT, Utils.slot(item, slotHint));   
+            
+            }    
+        
+        }, 
+        
+        // we're asked to unequip an item, let's make sure everything is 
+        // correct
+        // - the item is actually an equipment
+        unequip: function(socket, itemId, putToInventory) {
+        
+            // get the item
+            var item = this.item(socket.player, itemId);
+            
+            if (item && item[4][0] == F.EQUIPMENT) {
+            
+                this.grab(socket, itemId);
+                
+                if (putToInventory) {
+                
+                    this.putToInventory(socket);
+                
+                }
+            
+            }
+        
+        }, 
+        
+        // drop something on the floor
+        drop: function(socket, itemId) {
+        
+            // get the item
+            var item = this.item(socket.player, itemId);
+            
+            if (item && item[4][0] == F.HAND) {
+            
+                // we move the item to the floor
+                // TODO: calculate some nice position
+                this.changeItemLocation(item, F.HAND, [socket.player.hero.x - 50, socket.player.hero.y - 50]);    
+            
+            }
+        
+        }, 
+        
+        // destroy an item (i.e. remove it altogether)
+        // this is basically only needed when merging stacks of items or 
+        // in crafting
+        destroyItem: function(player, item) {
+        
+            player.items = _.filter(player.items, function(i) { return i[0] !== item[0] });                    
+        
+        }, 
+        
+        // we try to add an item to a space (indicated by spaceKey)
+        // we load the space, get its grid and try to get an empty 
+        // position in it
+        // if we can find one we put the item into the grid and 
+        // change the location of the item to the space and the 
+        // calculated position
+        addItemToSpace: function(player, spaceKey, item) {
+        
+                // get the space from the players spaces
+            var space = player.spaces[spaceKey], 
+                // get the space grid, if not yet setup -> create one
+                grid = space[3] || this.createGrid(player, space), 
+                pos, stack;
+            
+            // if the item can be stacked we first try to find an existing 
+            // stack    
+            if (item[2].stack) {
+            
+                stack = this.getStack(player.items, space[0], item);
+                
+                // we found a stack, let's just increase the amount
+                // afterwards we remove the item
+                if (stack) {
+                
+                    stack[2].stack += item[2].stack;
+                                        
+                    this.removeItem(player, item);
+                    
+                    return;
+                
+                } 
+            
+            }
+            
+            pos = this.getEmptyPosition(grid, item);                  
+                 
+            if (pos) {
+            
+                // add the item to the grid on the calculated position
+                this.addItemToGrid(grid, item, pos[0], pos[1]);
+                
+                // change the location of the item to the space and 
+                // the calculated position
+                this.changeItemLocation(item, space[0], pos);
+            
+            } 
+        
+        }, 
+        
+        // remove item from space
+        removeItemFromSpace: function(player, spaceKey, item) {
+        
+            var space = player.spaces[spaceKey], 
+                grid = space[3] || this.createGrid(player, space);
+            
+            this.removeItemFromGrid(grid, item, item[4][1][0], item[4][1][1]);                
+        
+        }, 
+
+        // mark a grid area with a given value
+        // normally used to mark grid cells as empty or occupied
+        markGridArea: function(grid, row, col, w, h, v) {
+        
+            var i, j;
+            
+            for (i = row; i < row + w; i++) {
+            
+                for (j = col; j < col + h; j++) {
+                
+                    grid[i][j] = v;    
+                
+                }
+            
+            }
+        
+        }, 
+
+        // remove item from grid
+        removeItemFromGrid: function(grid, item, row, col) {
+        
+            this.markGridArea(grid, row, col, item[2].spaceWidth || 1, item[2].spaceHeight || 1, 0);
+        
+        }
+
+        // we want to add a item to a grid at a distinct location
+        // we assume that a check was performed beforehand to make 
+        // sure the grid is empty at the given position
+        addItemToGrid: function(grid, item, row, col) {
+        
+            this.markGridArea(grid, row, col, item[2].spaceWidth || 1, item[2].spaceHeight || 1, 1);
+        
+        }, 
+        
+        // get the first index [row, col] of a space large enough to fit 
+        // in the given item in the given grid
+        getEmptyPosition: function(grid, item) {
+        
+            var w = item[2].spaceWidth || 1, 
+                h = item[2].spaceHeight || 1, 
+                i, j, k, l, empty;
+            
+            // loop through the grid and check for each field if there are 
+            // enough empty fields nearby to hold the item
+            for (i = 0; i < grid.length; i++) {
+            
+                for (j = 0; j < grid[i].length; j++) {
+                
+                    // make sure we are not in the last column or last row 
+                    // and the width or height of the item exceeds the 
+                    // grid dimensions
+                    if (i + w < grid.length && j + l < grid[i].length) {
+                
+                        empty = true;
+                
+                        for (k = 0; k < w; k++) {
+                        
+                            for (l = 0; l < h; l++) {
+                            
+                                if (grid[i + k][j + l] != 0) {
+                                
+                                    empty = false;
+                                
+                                }
+                            
+                            }
+                        
+                        } 
+                        
+                        // we found enough space so let's return the index 
+                        // of the upper left field
+                        if (empty) {
+                    
+                            return [i, j];
+                        
+                        } 
+                    
+                    } 
+                
+                }
+            
+            } 
+            
+            return null;   
+        
+        }, 
+        
+        // we encountered a space that did not have a grid. Let's create one 
+        // based on the spaces dimensions ([1] = rows, [2] = cols)
+        // afterwards we grab all players items located in the space and 
+        // place them accordingly
+        // items have their location stored in [4] while the position is 
+        // stored in the details field [1][row,col]
+        createGrid: function(player, space) {
+        
+            // we get an empty grid -> this is a 2-dimensional array 
+            // initiated with a 0 in every field
+            space[3] = Utils.createGrid(space[1], space[2]);
+        
+            // loop through all player's items assigned to the space and 
+            // mark its space in the grid
+            _.each(this.itemsByLocation(player, space[0]), function(i) {
+
+                this.addItemToGrid(space[3], i[4][1][0], i[4][1][1]);  
             
             }, this);
         

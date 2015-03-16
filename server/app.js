@@ -44,6 +44,51 @@ io.sockets.on('connection', function(socket) {
     
     });
     
+    socket.on('cmd', function(d) {
+    
+        switch (d[0]) {
+        
+            case 'unequip':
+            
+                js.unequip(socket, d[1], d[2]);
+                
+                break;
+            
+            case 'equip':
+            
+                js.equip(socket, d[1], d[2]);
+                
+                break;
+            
+            case 'pickup':
+            
+                js.pickup(socket, d[1]);
+
+                break;
+            
+            case 'sell':
+            
+                js.grab(socket, d[1]);
+                js.sell(socket);
+                
+                break;
+            
+            case 'buy':
+            
+                js.grab(socket, d[1]);
+                js.buy(socket);
+                
+                break;
+            
+            case 'drop':
+            
+                js.drop(socket);
+            
+                break;
+        }
+    
+    });
+    
     socket.on('debug', function() {
     
         js.debug = socket;

@@ -1,3 +1,6 @@
+2015-03-16/5
+CMD-Stuff (pickup/equip/unequip/drop)
+
 2015-03-11/2
 UI Stuff (controls, fields, globes)
 

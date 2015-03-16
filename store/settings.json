@@ -24,13 +24,13 @@
             "Health Potion", 1, 100, 0.5, 
             ["healthpotion", "potion", "autopickup"], 
             "Restores {settings.healthpotion_restore_percent}% of your health and has a {settings.healthption_cooldown_duration_seconds} cooldown.",
-            {}
+            { "stack": 1 }
         ], 
         [
             "Chipped Ruby", 1, 10, 1, 
             ["gem", "ruby", "ornament", "chipped"], 
             "", 
-            { "weapon": [["minDmg", 1], ["maxDmg", 2]], "headpiece": [["bonusXp", 10]], "armor": [["str", 10]], "jewelry": [["critDmg", 10]] }
+            { "weapon": [["minDmg", 1], ["maxDmg", 2]], "headpiece": [["bonusXp", 10]], "armor": [["str", 10]], "jewelry": [["critDmg", 10]], "stack": 1 }
         ], 
         [
             "Flawed Ruby", 9, 20, 1, 
@@ -80,6 +80,10 @@
     },
     "settings": {
         "healthpotion_restore_percent": 60,
-        "healthpotion_cooldown_duration_seconds": 120
-    }
+        "healthpotion_cooldown_duration_seconds": 120,
+        "inventory_dimensions": [16, 12], 
+        "stash_dimensions": [16, 20]
+    }, 
+    "rareNames1": ["Vile", "Evil", "Azure", "Cobalt", "Mirror", "Soul", "Meat", "Flesh", "Skin", "Moon", "Sun", "Neptune", "Mars", "Mercury", "Venus", "Earth", "Jupiter", "Saturn", "Uranus"], 
+    "rareNames2": ["Cutter", "Knife", "Shard", "Edge", "Steel", "Point", "Blade", "Sabre", "Shiv", "Dagger", "Ripper"]
 }
