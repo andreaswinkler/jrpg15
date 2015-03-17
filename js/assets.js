@@ -12,18 +12,6 @@ var Assets = {
     // possible values are low, medium and high
     // the setting should only be set on startup
     quality: 'medium', 
-    
-    // here we store the meta information of our assets
-    // TODO: this should be loaded from somewhere
-    meta: {
-        'desert.png': {
-            spriteDimensions: [64,32]
-        }, 
-        'hero.png': {
-            spriteDimensions: [200, 200], 
-            hitboxOffset: [60, 40, 60, 0]
-        }
-    }, 
 
     // this method is used to extract all assetIds from a list of objects
     // the list contains not only the assets of the objects themselves 

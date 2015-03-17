@@ -100,11 +100,22 @@
         
         }, 
         
-        createItem: function(itemType, sourceLevel, magicFind, goldFind, blueprint) {
+        createDistinctItem: function(blueprintFlag, level, rank, quality) {
+        
+            var blueprint = Utils.blueprintBySingleFlag(blueprintFlag), 
+                itemType = Utils.itemTypeByBlueprint(blueprint), 
+                level = level || 1, 
+                rank = rank || F.NORMAL, 
+                quality = quality || F.STANDARD; 
+
+            return this.createItem(itemType, level, 0, 0, blueprint, rank, quality);
+        
+        }, 
+        
+        createItem: function(itemType, sourceLevel, magicFind, goldFind, blueprint, rank, quality) {
         
             var blueprint = blueprint || this.randomBlueprint(itemType, sourceLevel), 
-                item = null, 
-                rank, quality;
+                item = null;
           
             if (blueprint) {
             
@@ -114,11 +125,11 @@
                     // flags
                     blueprint[4].slice(), 
                     // settings
-                    $.extend({}, true, blueprint[6]),
+                    _.extend({}, blueprint[6]),
                     // level
                     sourceLevel,
                     // location
-                    F.DROP
+                    [F.DROP]
                 ]; 
                 
                 switch (itemType) {
@@ -344,7 +355,7 @@
         
         }, 
         
-        drop: function(source, magicFind, goldFind) {
+        createDrop: function(source, magicFind, goldFind) {
            
             // create a drop based on source droptable and player level, 
             // gold find and magic find 
@@ -399,13 +410,38 @@
                 socket.player = player;
                 player.socket = socket;
                 
-                players.spaces = {
+                // setup spaces (inventory, stash, etc)
+                player.spaces = {
                     inventory: [F.INVENTORY].concat(Core.Settings.settings.inventory_dimensions),
                     stash0: [F.STASH0].concat(Core.Settings.settings.stash_dimensions), 
                     stash1: [F.STASH1].concat(Core.Settings.settings.stash_dimensions), 
                     stash2: [F.STASH2].concat(Core.Settings.settings.stash_dimensions), 
                     stash3: [F.STASH3].concat(Core.Settings.settings.stash_dimensions)         
                 };
+                
+                _.each(player.spaces, function(i) {
+                
+                    this.createGrid(player, i);
+                
+                }, this);
+                
+                // we have a new player, let's add a knife and a healthpotion
+                if (player.hero.xp == 0) {
+                
+                    player.items = [];
+                
+                    player.items.push(this.createDistinctItem(F.SMALLSWORD));
+                    player.items.push(this.createDistinctItem(F.HEALTHPOTION));
+                    
+                    this.grab(socket, player.items[0][0]);
+                    this.equip(socket, player.items[0][0], F.WEAPON1);
+                    
+                    this.grab(socket, player.items[1][0]);   
+                    this.putToSpace(socket, 'inventory');                 
+                
+                }
+                
+                Core.prepareElement(player.hero);
                 
                 this.players.push(player);
     
@@ -416,14 +452,16 @@
                 return {
                     id: player.id, 
                     name: player.name, 
-                    hero: player.hero
+                    hero: player.hero, 
+                    balance: player.balance, 
+                    items: player.items
                 };
             
             } catch (err) {
               
                 console.dir(err);
     
-                return {};
+                return null;
             
             }    
         
@@ -538,10 +576,37 @@
         
         }, 
         
+        map: function(gameId, mapId) {
+        
+            return this.game(gameId).state.maps[mapId];
+        
+        }, 
+        
+        tiles: function(gameId, mapId) {
+        
+            return this.map(gameId, mapId).state.map.grid.tiles;
+        
+        }, 
+        
+        landingPoint: function(gameId, mapId) {
+        
+            return _.find(this.tiles(gameId, mapId), function(i) {
+            
+                return i[4].indexOf(F.LANDINGPOINT);
+            
+            });
+        
+        }, 
+        
         // the client has loaded everything, we can now add him to the 
         // game
         onClientGameLoaded: function(socket, data) {
         
+            // place the hero on the landing point of the map
+            var landingPoint = this.landingPoint(socket.gameId, socket.mapId);
+            
+            Core.Position.update(socket.player.hero, landingPoint[2], landingPoint[3]); 
+
             this.addElement(socket.gameId, socket.mapId, socket.player.hero);
         
         }, 
@@ -600,8 +665,8 @@
                                     width: 6400, 
                                     height: 3200,  
                                     grid: {
-                                        rows: 100, 
-                                        cols: 100, 
+                                        rows: 50, 
+                                        cols: 50, 
                                         tiles: []
                                     } 
                                 }
@@ -615,11 +680,13 @@
             
                 for (j = 0; j < gameState.maps.playground.state.map.grid.rows; j++) {
                 
-                    gameState.maps.playground.state.map.grid.tiles.push({ name: i + '_' + j, walkable: true });
+                    gameState.maps.playground.state.map.grid.tiles.push([i, j, j * 10, i * 10, [F.WALKABLE, F.GROUND], {}]);
                 
                 }
             
             }
+            
+            gameState.maps.playground.state.map.grid.tiles[1000][4].push(F.LANDINGPOINT);
             
             return gameState;
         
@@ -772,7 +839,7 @@
         },
         
         // try to put the item in hand in the inventory
-        putToInventory: function(socket) {
+        putToSpace: function(socket, spaceKey) {
         
             // get the item the player has currently in hand
             var item = this.itemByLocation(socket.player, F.HAND);
@@ -780,9 +847,23 @@
             // if we could find one we add it to the inventory
             if (item) {
             
-                this.addItemToSpace(socket.player, 'inventory', item);
+                this.addItemToSpace(socket.player, spaceKey, item);
             
             }
+        
+        }, 
+        
+        // try to place the item in hand in the space
+        place: function(socket, spaceKey, row, col) {
+        
+            // get the item the player has currently in hand
+            var item = this.itemByLocation(socket.player, F.HAND);
+            
+            if (item) {
+            
+                this.addItemToGrid(socket.player.spaces[spaceKey].grid, item, row, col);
+            
+            }    
         
         }, 
         
@@ -796,7 +877,7 @@
             // get the item 
             var item = this.item(socket.player, itemId);
             
-            if (item && item[4][0] == F.DROP && Utils.distance(socket.player.hero.x, socket.player.hero.y, item[4][1][0], item[4][1][1]) <= Utils.attr(socket.player.hero, 'pickupradius'))) {
+            if (item && item[4][0] == F.DROP && Utils.distance(socket.player.hero.x, socket.player.hero.y, item[4][1][0], item[4][1][1]) <= Utils.attr(socket.player.hero, 'pickupradius')) {
                 
                 if (Utils.is(item, F.GOLD)) {
                 
@@ -807,7 +888,7 @@
                 } else {
                 
                     this.grab(socket, itemId);
-                    this.putToInventory(socket);
+                    this.putToSpace(socket, 'inventory');
                 
                 }           
             
@@ -883,6 +964,18 @@
         
         }, 
         
+        // get a stack by checking all passed items for a passed location and 
+        // compare to the item 
+        getStack: function(player, location, item) {
+        
+            return _.find(this.itemsByLocation(player, location), function(i) {
+            
+                return Utils.is(i, item[1]);
+            
+            });
+        
+        }, 
+        
         // we try to add an item to a space (indicated by spaceKey)
         // we load the space, get its grid and try to get an empty 
         // position in it
@@ -894,14 +987,14 @@
                 // get the space from the players spaces
             var space = player.spaces[spaceKey], 
                 // get the space grid, if not yet setup -> create one
-                grid = space[3] || this.createGrid(player, space), 
+                grid = space[3], 
                 pos, stack;
             
             // if the item can be stacked we first try to find an existing 
             // stack    
             if (item[2].stack) {
             
-                stack = this.getStack(player.items, space[0], item);
+                stack = this.getStack(player, space[0], item);
                 
                 // we found a stack, let's just increase the amount
                 // afterwards we remove the item
@@ -909,7 +1002,7 @@
                 
                     stack[2].stack += item[2].stack;
                                         
-                    this.removeItem(player, item);
+                    this.destroyItem(player, item);
                     
                     return;
                 
@@ -965,7 +1058,7 @@
         
             this.markGridArea(grid, row, col, item[2].spaceWidth || 1, item[2].spaceHeight || 1, 0);
         
-        }
+        }, 
 
         // we want to add a item to a grid at a distinct location
         // we assume that a check was performed beforehand to make 
@@ -984,16 +1077,19 @@
                 h = item[2].spaceHeight || 1, 
                 i, j, k, l, empty;
             
+            item[2].info = 'getEmptyPosition ' + w + '/' + h + ' - ' + grid.length + '/' + grid[0].length;
+            item[2].gridInfo = [];
+            
             // loop through the grid and check for each field if there are 
             // enough empty fields nearby to hold the item
             for (i = 0; i < grid.length; i++) {
             
                 for (j = 0; j < grid[i].length; j++) {
-                
+                    
                     // make sure we are not in the last column or last row 
                     // and the width or height of the item exceeds the 
                     // grid dimensions
-                    if (i + w < grid.length && j + l < grid[i].length) {
+                    if (i + h < grid.length && j + w < grid[i].length) {
                 
                         empty = true;
                 
@@ -1010,7 +1106,7 @@
                             }
                         
                         } 
-                        
+
                         // we found enough space so let's return the index 
                         // of the upper left field
                         if (empty) {

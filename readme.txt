@@ -1,3 +1,6 @@
+2015-03-17/4
+CMD-Stuff + Create first items for empty hero
+
 2015-03-16/5
 CMD-Stuff (pickup/equip/unequip/drop)
 

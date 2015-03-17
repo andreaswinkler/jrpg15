@@ -85,6 +85,13 @@ io.sockets.on('connection', function(socket) {
                 js.drop(socket);
             
                 break;
+                
+            case 'place':
+            
+                js.place(socket, d[1], d[2], d[3]);
+                
+                break;    
+                
         }
     
     });

@@ -103,8 +103,6 @@ var Lobby = {
         // show the game screen
         UI.screen('game');
         
-        console.dir(gameState);
-        
         // run the game
         Game.run();
     

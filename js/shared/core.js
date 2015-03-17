@@ -77,10 +77,10 @@
             HAND: 55, 
             EQUIPMENT: 56, 
             INVENTORY: 57, 
-            STASH_TAB0: 58, 
-            STASH_TAB1: 59,
-            STASH_TAB2: 60, 
-            STASH_TAB3: 61,
+            STASH0: 58, 
+            STASH1: 59,
+            STASH2: 60, 
+            STASH3: 61,
             DROP: 62,
             BLACKSMITH: 63, 
             VENDOR0: 64, 
@@ -92,7 +92,9 @@
             TOKEN2: 70, 
             TOKEN3: 71, 
             RING1: 72, 
-            RING2: 73                
+            RING2: 73,
+            LANDINGPOINT: 74, 
+            WALKABLE: 75                
         }, 
         
         Settings: null, 
@@ -171,8 +173,8 @@
         
         prepareElement: function(e) {
         
-            e.width = Assets.meta[e.assetId].spriteDimensions[0];
-            e.height = Assets.meta[e.assetId].spriteDimensions[1];
+            e.width = Core.Settings.assets[e.assetId].spriteDimensions[0];
+            e.height = Core.Settings.assets[e.assetId].spriteDimensions[1];
             e.width_h = Math.floor(e.width / 2);
             e.height_h = Math.floor(e.height / 2);
             e.box = [0, 0, 0, 0];
@@ -213,6 +215,19 @@
         
         }, 
     
+        Position: {
+        
+            update: function(e, x, y) {
+            
+                e.x = x;
+                e.y = y;
+                
+                Core.Translate.update(e);
+            
+            }
+        
+        }, 
+    
     //// M O V E M E N T    S E C T I O N //////////////////////////////////////////
         
         Translate: {
@@ -236,11 +251,8 @@
                 if (Core.Translate.canMoveTo(nx, ny, e)) {
                 
                     d = Core.Utils.distance(e.x, e.y, nx, ny);
-                
-                    e.x = nx;
-                    e.y = ny;
                     
-                    Core.Translate.update(e);       
+                    Core.Position.update(e, nx, ny);    
                 
                 }
             
@@ -333,10 +345,10 @@
                 e.box[2] = e.x + e.width_h;
                 e.box[3] = e.y;
                 
-                e.hitBox[0] = e.box[0] + Assets.meta[e.assetId].hitboxOffset[0];
-                e.hitBox[1] = e.box[1] + Assets.meta[e.assetId].hitboxOffset[1];
-                e.hitBox[2] = e.box[2] - Assets.meta[e.assetId].hitboxOffset[2];
-                e.hitBox[3] = e.box[3] - Assets.meta[e.assetId].hitboxOffset[3];
+                e.hitBox[0] = e.box[0] + Core.Settings.assets[e.assetId].hitboxOffset[0];
+                e.hitBox[1] = e.box[1] + Core.Settings.assets[e.assetId].hitboxOffset[1];
+                e.hitBox[2] = e.box[2] - Core.Settings.assets[e.assetId].hitboxOffset[2];
+                e.hitBox[3] = e.box[3] - Core.Settings.assets[e.assetId].hitboxOffset[3];
             
             }
         
@@ -373,6 +385,45 @@
                 return bp;
             
             },
+            
+            // get a blueprint by one distinctive flag
+            blueprintBySingleFlag: function(flag) {
+            
+                var bp;
+                
+                _.each(Core.Settings.blueprints, function(blueprint) {
+                
+                    if (blueprint[4].indexOf(flag) != -1) {
+                    
+                        bp = blueprint;
+                        return;
+                    
+                    }
+                
+                });
+                
+                return bp;
+            
+            }, 
+            
+            // returns the itemType based on a blueprint
+            itemTypeByBlueprint: function(blueprint) {
+            
+                var itemType;
+            
+                _.each(['WEAPON', 'ARMOR', 'JEWELRY', 'MATERIAL', 'ORNAMENT', 'UTILITY', 'QUEST', 'OTHER'], function(i) {
+                
+                    if (blueprint[4].indexOf(Core.Flags[i]) != -1) {
+                    
+                        itemType = i;
+    
+                    }    
+                
+                });
+                
+                return itemType;
+            
+            }, 
             
             // return the maxmimum amount of sockets a given item can have
             maxSockets: function(item) {
@@ -666,6 +717,8 @@
                     }
                 
                 }
+                
+                return grid;
 
             }, 
             
@@ -698,17 +751,17 @@
                         
                             return a[i][0];
                         
-                        }
-                    
-                    } else {
-                    
-                        if (a[i][1].indexOf(slotHint) != -1) {
-                        
-                            return slotHint;
-                        
                         } else {
-                        
-                            return a[i][0];
+                    
+                            if (a[i][1].indexOf(slotHint) != -1) {
+                            
+                                return slotHint;
+                            
+                            } else {
+                            
+                                return a[i][0];
+                            
+                            }
                         
                         }
                     
@@ -730,6 +783,13 @@
         module.exports = Core;
     
     } else {
+        
+        $.getJSON('store/settings.json', {}, function(d) {
+        
+            window.Core.Settings = d;
+            window.Core.init();    
+        
+        });
         
         window.Core = Core;
     
