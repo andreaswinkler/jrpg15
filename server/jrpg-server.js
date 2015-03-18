@@ -36,7 +36,7 @@
         
         tsLastLoop: 0, 
         
-        msFrame: 16.6, 
+        msFrame: 1000, 
         
         // active games
         games: [],
@@ -399,71 +399,90 @@
         
         }, 
         
+        createAndAddItem: function(socket, blueprintFlag) {
+        
+            var item = this.createDistinctItem(blueprintFlag);
+            
+            // add item to the players item list
+            socket.player.items.push(item);
+            
+            return item;
+        
+        }, 
+        
+        createAndEquipItem: function(socket, blueprintFlag, slotHint) {
+        
+            var item = this.createAndAddItem(socket, blueprintFlag);
+    
+            // put the item into the players hand
+            this.grab(socket, item[0]);
+            
+            // try to equip the item
+            this.equip(socket, item[0], slotHint);    
+        
+        }, 
+        
+        createAndStoreItem: function(socket, spaceKey, blueprintFlag) {
+        
+            var item = this.createAndAddItem(socket, blueprintFlag);
+            
+            // put the item into the players hand
+            this.grab(socket, item[0]);
+            
+            // put the item into a space
+            this.putToSpace(socket, spaceKey);         
+        
+        }, 
+        
         login: function(socket, playername, password) {
            
-            var player;
-        
-            try {
+            var player = require('./../store/players/' + playername + '.json');
+                
+            socket.player = player;
+            player.socket = socket;
             
-                player = require('./../store/players/' + playername + '.json');
-                
-                socket.player = player;
-                player.socket = socket;
-                
-                // setup spaces (inventory, stash, etc)
-                player.spaces = {
-                    inventory: [F.INVENTORY].concat(Core.Settings.settings.inventory_dimensions),
-                    stash0: [F.STASH0].concat(Core.Settings.settings.stash_dimensions), 
-                    stash1: [F.STASH1].concat(Core.Settings.settings.stash_dimensions), 
-                    stash2: [F.STASH2].concat(Core.Settings.settings.stash_dimensions), 
-                    stash3: [F.STASH3].concat(Core.Settings.settings.stash_dimensions)         
-                };
-                
-                _.each(player.spaces, function(i) {
-                
-                    this.createGrid(player, i);
-                
-                }, this);
-                
-                // we have a new player, let's add a knife and a healthpotion
-                if (player.hero.xp == 0) {
-                
-                    player.items = [];
-                
-                    player.items.push(this.createDistinctItem(F.SMALLSWORD));
-                    player.items.push(this.createDistinctItem(F.HEALTHPOTION));
-                    
-                    this.grab(socket, player.items[0][0]);
-                    this.equip(socket, player.items[0][0], F.WEAPON1);
-                    
-                    this.grab(socket, player.items[1][0]);   
-                    this.putToSpace(socket, 'inventory');                 
-                
-                }
-                
-                Core.prepareElement(player.hero);
-                
-                this.players.push(player);
-    
-                this.debugInfo(); 
-                
-                this.lobbyInfo();
-                
-                return {
-                    id: player.id, 
-                    name: player.name, 
-                    hero: player.hero, 
-                    balance: player.balance, 
-                    items: player.items
-                };
+            // clear everything - just to make sure
+            this.removePlayerFromGames(player.id);
             
-            } catch (err) {
-              
-                console.dir(err);
-    
-                return null;
+            // setup spaces (inventory, stash, etc)
+            player.spaces = {
+                inventory: [F.INVENTORY].concat(Core.Settings.settings.inventory_dimensions),
+                stash0: [F.STASH0].concat(Core.Settings.settings.stash_dimensions), 
+                stash1: [F.STASH1].concat(Core.Settings.settings.stash_dimensions), 
+                stash2: [F.STASH2].concat(Core.Settings.settings.stash_dimensions), 
+                stash3: [F.STASH3].concat(Core.Settings.settings.stash_dimensions)         
+            };
             
-            }    
+            _.each(player.spaces, function(i) {
+            
+                this.createGrid(player, i);
+            
+            }, this);
+            
+            // we have a new player, let's add a knife and a healthpotion
+            if (player.hero.xp == 0) {
+            
+                player.items = [];
+                this.createAndEquipItem(socket, F.SMALLSWORD, F.WEAPON1);
+                this.createAndStoreItem(socket, 'inventory', F.HEALTHPOTION);             
+            
+            }
+            
+            Core.prepareElement(player.hero);
+            
+            this.players.push(player);
+
+            this.debugInfo(); 
+            
+            this.lobbyInfo();
+            
+            return {
+                id: player.id, 
+                name: player.name, 
+                hero: player.hero, 
+                balance: player.balance, 
+                items: player.items
+            };
         
         }, 
         
@@ -567,6 +586,9 @@
             // bind the socket to the current map id
             socket.mapId = 'playground';
             
+            // add the player also to the map's player list
+            this.map(socket.gameId, socket.mapId).players.push(socket.player);
+            
             this.debugInfo(); 
             
             this.lobbyInfo();
@@ -582,19 +604,9 @@
         
         }, 
         
-        tiles: function(gameId, mapId) {
-        
-            return this.map(gameId, mapId).state.map.grid.tiles;
-        
-        }, 
-        
         landingPoint: function(gameId, mapId) {
         
-            return _.find(this.tiles(gameId, mapId), function(i) {
-            
-                return i[4].indexOf(F.LANDINGPOINT);
-            
-            });
+            return this.map(gameId, mapId).landingPoints[0];
         
         }, 
         
@@ -605,11 +617,11 @@
             // place the hero on the landing point of the map
             var landingPoint = this.landingPoint(socket.gameId, socket.mapId);
             
-            Core.Position.update(socket.player.hero, landingPoint[2], landingPoint[3]); 
+            Core.Position.update(socket.player.hero, landingPoint[0], landingPoint[1]); 
 
             this.addElement(socket.gameId, socket.mapId, socket.player.hero);
         
-        }, 
+        },
         
         // add an element to a game state and inform everyone about it
         addElement: function(gameId, mapId, element) {
@@ -642,7 +654,17 @@
         
             return _.find(this.games, function(e) { return _.find(e.players, function(e) { return e.id == playerId }); }, this);
         
-        }, 
+        },
+        
+        removePlayerFromGames: function(playerId) {
+        
+            _.each(_.filter(this.games, function(e) { return _.find(e.players, function(e) { return e.id == playerId }); }, this), function(e) {
+            
+                this.removePlayerFromGame(e.id, playerId);
+            
+            }, this);
+        
+        },  
         
         player: function(id) {
         
@@ -655,8 +677,11 @@
             var gameState = { 
                     maps: {
                         'playground': {
+                            landingPoints: [], 
+                            spawnPoints: [], 
+                            players: [],  
                             state: {
-                                elements: [], 
+                                elements: [],
                                 map: { 
                                     id: 'playground', 
                                     assetId: 'map-playground', 
@@ -668,7 +693,7 @@
                                         rows: 50, 
                                         cols: 50, 
                                         tiles: []
-                                    } 
+                                    }
                                 }
                             }
                         }
@@ -686,7 +711,8 @@
             
             }
             
-            gameState.maps.playground.state.map.grid.tiles[1000][4].push(F.LANDINGPOINT);
+            gameState.maps.playground.landingPoints.push([100, 100]);
+            gameState.maps.playground.spawnPoints.push([300, 300, F.HYSTRIX, 5]);
             
             return gameState;
         
@@ -709,6 +735,12 @@
                 game.state.elements = _.without(game.state.elements, player.hero);
                 
                 game.players = _.without(game.players, player);
+                
+                _.each(game.state.maps, function(map) {
+                
+                    map.players = _.without(map.players, player);
+                
+                });
                 
                 if (game.players.length == 0) {
                 
@@ -735,7 +767,7 @@
                 
                 _.each(this.games, this.update, this);
                 
-                this.autoSavePlayers();
+                //this.autoSavePlayers();
             
             }
             
@@ -747,9 +779,74 @@
         
             var ts = +new Date();
             
-            // handle everything
-            // e.g. produce a new game state
+            // go through all maps and update them
+            _.each(game.state.maps, function(map, mapId) {
+
+                // we skip empty maps
+                if (map.players.length > 0) {
+                
+                    // we have spawnpoints left, let's check them
+                    if (map.spawnPoints.length > 0) {
+                
+                        this.updateSpawnPoints(game.id, mapId); 
+                    
+                    }
+                
+                }
             
+            }, this);
+            
+        }, 
+        
+        // create a creature
+        creature: function(x, y, creatureFlag) {
+        
+            var blueprint = Utils.creatureBlueprint(creatureFlag), 
+                creature = _.extend({}, blueprint[2]);
+            
+            creature.id = this.id();
+            creature.flags = blueprint[1].slice();
+            
+            Core.prepareElement(creature);
+            Core.Position.update(creature, x, y);
+            
+            return creature;                    
+        
+        }, 
+        
+        // check all spawnpoints if any of them is in range of a player and 
+        // needs to spawn
+        updateSpawnPoints: function(gameId, mapId) {
+            
+            // get all spawnpoints which are near players
+            var map = this.map(gameId, mapId), 
+                activeSpawnpoints = _.filter(map.spawnPoints, function(sp) {
+            
+                    return _.find(map.players, function(p) { 
+                    
+                        return Utils.distance(p.hero.x, p.hero.y, sp[0], sp[1]) <= 1500;
+                    
+                    }) != undefined;
+                
+                });
+        
+            // go through all activated spawnpoints: spawn and remove them
+            // TODO: handle multi-/frequent spawner and champion/elite 
+            // handling
+            _.each(activeSpawnpoints, function(sp) {
+            
+                var i;
+                
+                for (i = 0; i < sp[3]; i++) {
+                
+                    this.addElement(gameId, mapId, this.creature(sp[0], sp[1], sp[2]));
+                
+                } 
+                
+                map.spawnPoints = _.without(map.spawnPoints, sp);       
+            
+            }, this);               
+        
         }, 
         
         autoSavePlayers: function() {
@@ -902,7 +999,7 @@
         
             // get the item
             var item = this.item(socket.player, itemId);
-            
+
             if (item && [F.HAND, F.INVENTORY].indexOf(item[4][0]) != -1) {
             
                 if (item[4][0] == F.INVENTORY) {
@@ -1064,7 +1161,7 @@
         // we assume that a check was performed beforehand to make 
         // sure the grid is empty at the given position
         addItemToGrid: function(grid, item, row, col) {
-        
+
             this.markGridArea(grid, row, col, item[2].spaceWidth || 1, item[2].spaceHeight || 1, 1);
         
         }, 
@@ -1141,7 +1238,7 @@
             // mark its space in the grid
             _.each(this.itemsByLocation(player, space[0]), function(i) {
 
-                this.addItemToGrid(space[3], i[4][1][0], i[4][1][1]);  
+                this.addItemToGrid(space[3], i, i[4][1][0], i[4][1][1]);  
             
             }, this);
         

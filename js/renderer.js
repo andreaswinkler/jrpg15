@@ -168,8 +168,8 @@ var Renderer = {
                 0, 
                 0, 
                 // get the size of the sprite from the meta information 
-                Assets.meta[map.theme].spriteDimensions[0],
-                Assets.meta[map.theme].spriteDimensions[1], 
+                Core.Settings.assets[map.theme].spriteDimensions[0],
+                Core.Settings.assets[map.theme].spriteDimensions[1], 
                 // calculate the horizontal position
                 col * Renderer.tileWidth + (row % 2) * Renderer.tileHeight, 
                 // calculate the vertical position
@@ -226,12 +226,12 @@ var Renderer = {
             Assets.get(element),
             0, 
             0, 
-            Assets.meta[element.assetId].spriteDimensions[0], 
-            Assets.meta[element.assetId].spriteDimensions[1], 
+            Core.Settings.assets[element.assetId].spriteDimensions[0], 
+            Core.Settings.assets[element.assetId].spriteDimensions[1], 
             localPosition.x, 
             localPosition.y, 
-            Math.floor(Assets.meta[element.assetId].spriteDimensions[0] * Renderer.zoom), 
-            Math.floor(Assets.meta[element.assetId].spriteDimensions[0] * Renderer.zoom) 
+            Math.floor(Core.Settings.assets[element.assetId].spriteDimensions[0] * Renderer.zoom), 
+            Math.floor(Core.Settings.assets[element.assetId].spriteDimensions[0] * Renderer.zoom) 
         );
     
     }, 

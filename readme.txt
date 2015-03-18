@@ -1,3 +1,6 @@
+2015-03-18/4
+SpawnPoints, LandingPoints
+
 2015-03-17/4
 CMD-Stuff + Create first items for empty hero
 

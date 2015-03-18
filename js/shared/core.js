@@ -94,7 +94,26 @@
             RING1: 72, 
             RING2: 73,
             LANDINGPOINT: 74, 
-            WALKABLE: 75                
+            WALKABLE: 75, 
+            SPAWNPOINT: 76, 
+            HYSTRIX: 77, 
+            BEAST: 78, 
+            HUMAN: 79, 
+            RANGED: 80, 
+            MELEE: 81, 
+            ELITE: 82, 
+            CHAMPION: 83, 
+            UNIQUE: 84,
+            BOSS: 85, 
+            ARROW: 86, 
+            PHYSICAL: 87, 
+            FIRE: 88, 
+            COLD: 89, 
+            POISON: 90, 
+            ARCANE: 91, 
+            FAST: 92, 
+            EXTRAHEALTH: 93, 
+            STRONG: 94    
         }, 
         
         Settings: null, 
@@ -156,6 +175,26 @@
             _.each(this.Settings.itemQualities, function(i) {
             
                 i[0] = this.Flags[i[0].toUpperCase()];
+            
+            }, this);
+            
+            _.each(this.Settings.creatures, function(c) {
+            
+                for (var i = 0; i < c[1].length; i++) {
+                
+                    c[1][i] = this.Flags[c[1][i].toUpperCase()];
+                
+                }
+                
+                for (var i = 0; i < c[2].skills.length; i++) {
+                
+                    for (var j = 0; j < c[2].skills[i][1].length; j++) {
+                    
+                        c[2].skills[i][1][j] = this.Flags[c[2].skills[i][1][j].toUpperCase()];
+                    
+                    }
+                
+                }
             
             }, this);
         
@@ -360,9 +399,11 @@
         
             // check if an item matches all conditions
             // i.e: the item contains all given flags
+            // flags array can be the index 1 of a provided array or the 
+            // 'flags' attribute of a provided object
             is: function(e, condition1) {
-        
-                return arguments.length - 1 == _.intersection(arguments[0][1], [].slice.call(arguments, 1)).length;
+                console.dir(arguments[0].flags);
+                return arguments.length - 1 == _.intersection((arguments[0].flags || arguments[0][1]), [].slice.call(arguments, 1)).length;
             
             }, 
             
@@ -394,6 +435,26 @@
                 _.each(Core.Settings.blueprints, function(blueprint) {
                 
                     if (blueprint[4].indexOf(flag) != -1) {
+                    
+                        bp = blueprint;
+                        return;
+                    
+                    }
+                
+                });
+                
+                return bp;
+            
+            }, 
+            
+            // get a creature blueprint by one distinctive flag
+            creatureBlueprint: function(flag) {
+            
+                var bp;
+                
+                _.each(Core.Settings.creatures, function(blueprint) {
+                
+                    if (blueprint[1].indexOf(flag) != -1) {
                     
                         bp = blueprint;
                         return;

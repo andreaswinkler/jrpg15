@@ -46,6 +46,15 @@
             { "sockets": [0, 3] } 
         ]
     ],
+    "creatures": [
+        [
+            "Hystrix", 
+            ["hystrix", "beast", "ranged"], 
+            { "assetId": "hystrix.png", "dmg": 1, "life": 10, "speed": 1, "as": 0.25, "aggroRange": 500, "skills": [
+                ["Spike", ["arrow", "physical"], { "range": 1000, "speed": 1.5, "dmgx": 1 } ]
+            ] }
+        ]
+    ],
     "affixes": {
         "prefixes": [
             [1, 1, 20, ["sword"], "Sharp", "dmg_p", [1, 5]], 
@@ -83,14 +92,18 @@
         "healthpotion_cooldown_duration_seconds": 120,
         "inventory_dimensions": [12, 16], 
         "stash_dimensions": [20, 16]
-    },
+    }, 
     "assets": {
         "desert.png": {
-            "spriteDimensions": [64,32]
+            "spriteDimensions": [64, 32]
         }, 
         "hero.png": {
             "spriteDimensions": [200, 200], 
             "hitboxOffset": [60, 40, 60, 0]
+        },
+        "hystrix.png": {
+            "spriteDimensions": [100, 105],
+            "hitboxOffset": [0, 0, 0, 0]
         }
     },  
     "rareNames1": ["Vile", "Evil", "Azure", "Cobalt", "Mirror", "Soul", "Meat", "Flesh", "Skin", "Moon", "Sun", "Neptune", "Mars", "Mercury", "Venus", "Earth", "Jupiter", "Saturn", "Uranus"], 
