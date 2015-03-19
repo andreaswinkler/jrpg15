@@ -54,6 +54,8 @@ var UI = {
     
     update: function() {
     
+        $('#globe_life .value').html(Game.hero.c.life);
+    
         //this.updateElement('life', Game.hero.life_c, Game.hero.life); 
         //this.updateElement('mana', Game.hero.mana_c, Game.hero.mana); 
     

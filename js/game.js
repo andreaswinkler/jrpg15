@@ -29,13 +29,47 @@ var Game = {
 
         Game.running = false;
         
-        Net.bind('createelement', function(element) {
+        Net.bind('createelement', Game.onElementCreated);
         
-            Game.state.elements.push(Core.prepareElement(element));
-        
-        });
+        Net.bind('diff', Game.onDiffReceived);
 
     },
+    
+    onElementCreated: function(element) {
+    
+        Game.state.elements.push(Core.prepareElement(element));
+            
+        if (element.assetId == 'hero.png') {
+        
+            Game.hero = element;
+          
+        }    
+    
+    }, 
+    
+    onDiffReceived: function(diff) {
+    
+        _.each(Game.state.elements, function(e) {
+            
+            _.each(diff, function(v, k) {
+            
+                if (k == e.id) {
+                
+                    _.each(v, function(newValue, attr) {
+                    
+                        e.c[attr] = newValue;
+                    
+                    });
+                
+                }
+            
+            });
+        
+        });
+        
+        UI.update();    
+    
+    }, 
     
     // this is used to actually start the game
     run: function(dontRunIfPaused) {

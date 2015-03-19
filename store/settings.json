@@ -57,13 +57,13 @@
     ],
     "affixes": {
         "prefixes": [
-            [1, 1, 20, ["sword"], "Sharp", "dmg_p", [1, 5]], 
-            [1, 1, 20, ["weapon"], "Cruel", "critChance_p", [1, 3]], 
-            [1, 1, 20, ["weapon"], "Mechanic's", "sockets", [1, 2]]
+            [1, 1, 20, ["sword"], "Sharp", "dmg", [1, 2]], 
+            [1, 1, 20, ["weapon"], "Cruel", "critChance", [1, 3]], 
+            [1, 1, 20, ["weapon"], "Mechanic's", "sockets", [1, 3]]
         ], 
         "suffixes": [
             [1, 1, 20, ["weapon"], "of Brutality", "maxDmg", [1, 5]], 
-            [1, 1, 20, ["weapon"], "of Suffering", "critDmg_p", [10, 20]]
+            [1, 1, 20, ["weapon"], "of Suffering", "critDmg", [10, 20]]
         ]
     }, 
     "itemRanks": [
@@ -81,10 +81,10 @@
         ["etheral", 0.05, 1, 100, 1.4]
     ],
     "labels": {
-        "dmg_p": "+#% damage", 
-        "critChance_p": "+#% critical hit chance", 
+        "dmg": "+#% damage", 
+        "critChance": "+#% critical hit chance", 
         "maxDmg": "+# maximum damage", 
-        "critDmg_p": "+#% critical hit damage",
+        "critDmg": "+#% critical hit damage",
         "sockets": "Sockets (#)"
     },
     "settings": {

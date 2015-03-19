@@ -440,6 +440,8 @@
                 
             socket.player = player;
             player.socket = socket;
+            player.hero.equipment = [];
+            player.hero.flags = [F.HERO];
             
             // clear everything - just to make sure
             this.removePlayerFromGames(player.id);
@@ -777,7 +779,8 @@
         
         update: function(game) {
         
-            var ts = +new Date();
+            var ts = +new Date(), 
+                changes, hero;
             
             // go through all maps and update them
             _.each(game.state.maps, function(map, mapId) {
@@ -791,7 +794,28 @@
                         this.updateSpawnPoints(game.id, mapId); 
                     
                     }
-                
+                    
+                    changes = {};
+                    
+                    hero = _.find(map.state.elements, function(i) { return i.assetId == 'hero.png'; });
+
+                    _.each(map.state.elements, function(e) {
+
+                        if (e.is(F.HYSTRIX) && hero && !hero.is(F.DEAD)) {
+
+                            Core.Combat.hit(e, hero, e.skills[0]);    
+                            changes[hero.id] = { 'life': hero.c.life };
+
+                        }
+                    
+                    });
+                    
+                    if (_.size(changes) > 0) {
+                    
+                        this.broadcast(_.pluck(map.players, 'socket'), 'diff', changes);
+                    
+                    }                    
+                    
                 }
             
             }, this);
@@ -998,7 +1022,8 @@
         equip: function(socket, itemId, slotHint) {
         
             // get the item
-            var item = this.item(socket.player, itemId);
+            var item = this.item(socket.player, itemId), 
+                slot;
 
             if (item && [F.HAND, F.INVENTORY].indexOf(item[4][0]) != -1) {
             
@@ -1008,7 +1033,11 @@
                 
                 } 
                 
-                this.changeItemLocation(item, F.EQUIPMENT, Utils.slot(item, slotHint));   
+                slot = Utils.slot(item, slotHint); 
+                
+                this.changeItemLocation(item, F.EQUIPMENT, slot); 
+                
+                socket.player.hero.equipment.push(item);  
             
             }    
         
@@ -1023,6 +1052,8 @@
             var item = this.item(socket.player, itemId);
             
             if (item && item[4][0] == F.EQUIPMENT) {
+            
+                socket.player.hero.equipment = _.without(socket.player.hero.equipment, function(i) { return i[0] == itemId; });
             
                 this.grab(socket, itemId);
                 

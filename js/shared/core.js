@@ -110,10 +110,17 @@
             FIRE: 88, 
             COLD: 89, 
             POISON: 90, 
-            ARCANE: 91, 
+            LIGHTNING: 91, 
             FAST: 92, 
             EXTRAHEALTH: 93, 
-            STRONG: 94    
+            STRONG: 94, 
+            CRITICAL: 95, 
+            CRUSHINGBLOW: 96, 
+            DODGED: 97, 
+            LETHAL: 98, 
+            IMMUNE: 99, 
+            DEAD: 100, 
+            HERO: 101
         }, 
         
         Settings: null, 
@@ -218,13 +225,68 @@
             e.height_h = Math.floor(e.height / 2);
             e.box = [0, 0, 0, 0];
             e.hitBox = [0, 0, 0, 0];
-            e.speed_c = e.speed;
+
+            e.is = function() {
+
+                return Utils.is.apply(Utils, [this].concat([].slice.call(arguments)));
+            
+            };
+            
+            this.calculateCurrentAttributes(e);
             
             Core.Translate.update(e);
             
             return e;
         
         },
+        
+        // recalculate all current values from the base values
+        calculateCurrentAttributes: function(e) {
+        
+            e.c = {};
+        
+            e.c.speed = e.speed;
+            e.c.life = e.life;
+            e.c.mana = e.mana;
+            e.c.as = e.as;
+        
+            if (e.dmg) {
+            
+                e.c.minDmg = e.dmg;
+                e.c.maxDmg = e.dmg;
+            
+            }
+            
+            if (e.vit) {
+            
+                e.c.vit = e.vit;
+                e.c.dex = e.dex;
+                e.c.int = e.int;
+                e.c.str = e.str;
+                
+                e.c.life = (e.c.life || 0) + (e.c.vit * 5);
+                e.c.mana = (e.c.mana || 0) + (e.c.int * 2.5);
+            
+                e.c.lps = Math.floor(e.c.vit / 10);
+                e.c.mps = Math.floor(e.c.int / 10);
+            
+            } 
+            
+            if (e.equipment) {
+            
+                _.each(e.equipment, function(i) {
+                
+                    _.each(i[2], function(v, k) {
+                        
+                        e.c[k] = (e.c[k] || 0) + v;
+                    
+                    });
+                
+                });
+            
+            }           
+        
+        }, 
         
         // check if the given position is on the map (nothing should get off
         // the map)
@@ -289,7 +351,7 @@
                 // can move to check goes here!!
                 if (Core.Translate.canMoveTo(nx, ny, e)) {
                 
-                    d = Core.Utils.distance(e.x, e.y, nx, ny);
+                    d = Utils.distance(e.x, e.y, nx, ny);
                     
                     Core.Position.update(e, nx, ny);    
                 
@@ -303,7 +365,7 @@
             byTarget: function(e) {
             
                 // speed = 1 means 1px/ms
-                var speed = e.speed_c * Core.dt / 10, 
+                var speed = e.c.speed * Core.dt / 10, 
                     distanceTravelled = Core.Translate.by(e, e.target.dx * speed, e.target.dy * speed);
                 
                 if (distanceTravelled) {
@@ -335,7 +397,7 @@
             // create a target object based on the destination
             createTarget: function(x, y, tx, ty, infinitely) {
             
-                var d = Core.Utils.distance(x, y, tx, ty);
+                var d = Utils.distance(x, y, tx, ty);
             
                 return {
                     x: tx, 
@@ -357,7 +419,7 @@
                 e.target = Core.Translate.createTarget(e.x, e.y, x, y, infinitely);
     
                 // set the elements rotation
-                e.rotation = Core.Utils.direction(e.x, e.y, x, y);
+                e.rotation = Utils.direction(e.x, e.y, x, y);
             
             },
             
@@ -393,6 +455,174 @@
         
         }, 
         
+    //// C O M B A T    S E C T I O N //////////////////////////////////////////////
+    
+        Combat: {
+        
+            damage: function(e, skill, target) {
+            
+                // 1 get the base damage (random value between total minimum 
+                // and total maximum damage)
+                // creatures only have one damge attribute
+                var dmg = Utils.random(e.c.minDmg, e.c.maxDmg);
+                
+                // 2 apply skill damage bonus
+                dmg *= skill[2].dmgx;
+
+                // 3 apply target modifiers
+                if (target.is(F.ELITE)) {
+                
+                    dmg *= (e.c.dmgAgainstElites || 1);
+                
+                }
+                
+                if (Utils.is(skill, F.MELEE)) {
+                
+                    dmg *= (e.c.dmgAgainstMelee || 1);
+                
+                } else if (Utils.is(skill, F.RANGED)) {
+                
+                    dmg *= (e.c.dmgAgainstRanged || 1);
+                
+                }
+                
+                // 4 apply elemental damage bonus
+                if (Utils.is(skill, F.FIRE)) {
+                
+                    dmg *= (e.c.increasedFireDmg || 1);
+                
+                } else if (Utils.is(skill, F.COLD)) {
+                
+                    dmg *= (e.c.increasedColdDmg || 1);       
+                
+                } else if (Utils.is(skill, F.LIGHTNING)) {
+                
+                    dmg *= (e.c.increasedLightningDmg || 1);  
+                
+                }
+                
+                // MASTERY BONUS
+                // STRENGTH BONUS
+                // PASSIVE DAMAGE BONUS
+                // BUFFS/DEBUFFS
+                
+                return dmg;
+            
+            },
+            
+            damageReduction: function(e, skill, source) {
+            
+                var dr = 0;
+            
+                // 1 we check if we are immune
+                if (e.is(F.IMMUNE)) {
+                
+                    dr += 1;    
+                
+                } else {
+                
+                    // 2 we check if there is a shield  
+                    if (Math.random() <= (e.c.blockChance || 0)) {
+                    
+                        dr += (e.c.block || 0);
+                    
+                    } 
+                    
+                    // 3 we check our resistances
+                    _.each(['FIRE', 'COLD', 'LIGHTNING', 'POISON', 'PHYSICAL'], function(i) {
+                    
+                        if (Utils.is(skill, F[i])) {
+                        
+                            dr += (e.c[i.toLowerCase() + 'Res'] || 0);
+                        
+                        }
+                    
+                    });
+                    
+                    // 4 we check our damage reduction against the attacker
+                    if (Utils.is(skill, F.MELEE)) {
+                
+                        dr += e.c.resAgainstMelee || 0;
+                    
+                    } else if (Utils.is(skill, F.RANGED)) {
+                    
+                        dr += e.c.resAgainstRanged || 0;
+                    
+                    } 
+                    
+                    // 5 reduce the damage further by the armor of the target
+                    //dr += Core.Utils.attr(target, 'armor') * target.life / 100;
+                    
+                    
+                }
+
+                return Math.min(1, dr);
+            
+            },  
+        
+            hit: function(source, target, skill) {
+            
+                var res = [0, []];
+
+                // 1 check if the target dodges the attack
+                if (Math.random() <= (target.c.dodgeChance || 0)) {
+                
+                    res[1].push(F.DODGED);        
+                
+                } else {
+                
+                    // 2 calculate the damage
+                    // 2.1 check for crushing blow
+                    //     a crushing blow deals damage in the value of one 
+                    //     quarter of the targets total hitpoints
+                    if (Math.random() <= (source.c.crushingBlowChance || 0)) {
+                    
+                        res[0] = target.life * 0.25;
+                        res[1].push(F.CRUSHINGBLOW);
+                    
+                    } else {
+                    
+                        // 2.2 calculate the damage based on the source 
+                        // attributes and the skill used
+                        // any (de)buffs are also included in the calculation
+                        // the type of target is also included
+                        res[0] = this.damage(source, skill, target);
+                        
+                        // 2.3 check if this is a critical hit
+                        //     critical hits damage is increased by the 
+                        //     sources critical hit damage
+                        if (Math.random() <= (source.c.critChance || 0)) {
+                        
+                            res[0] *= (source.c.critDmg || 1);
+                            res[1].push(F.CRITICAL)
+                        
+                        }
+                    
+                    }
+
+                    // 3 reduce the damage by armor/res/shield of the target
+                    res[0] -= res[0] * (this.damageReduction(target, skill, source)) / 1; 
+                    
+                    // 4 apply the final damage to the target and check if the 
+                    // target survived
+                    target.c.life = Math.max(0, target.c.life - Math.max(0, res[0]));
+                    
+                    if (target.c.life == 0) {
+                    
+                        target.flags.push(F.DEAD);
+                        res[1].push(F.LETHAL);
+                    
+                    }            
+                                        
+                
+                } 
+                
+                return res;               
+            
+            }
+        
+        }, 
+        
     //// U T I L I T Y    S E C T I O N ////////////////////////////////////////////    
         
         Utils: {
@@ -402,7 +632,7 @@
             // flags array can be the index 1 of a provided array or the 
             // 'flags' attribute of a provided object
             is: function(e, condition1) {
-                console.dir(arguments[0].flags);
+
                 return arguments.length - 1 == _.intersection((arguments[0].flags || arguments[0][1]), [].slice.call(arguments, 1)).length;
             
             }, 
@@ -474,7 +704,7 @@
             
                 _.each(['WEAPON', 'ARMOR', 'JEWELRY', 'MATERIAL', 'ORNAMENT', 'UTILITY', 'QUEST', 'OTHER'], function(i) {
                 
-                    if (blueprint[4].indexOf(Core.Flags[i]) != -1) {
+                    if (blueprint[4].indexOf(F[i]) != -1) {
                     
                         itemType = i;
     
@@ -505,131 +735,7 @@
             // displayName
             displayName: function(e) {
             
-                var name = this.name(e);
-            
-                if (this.is(e, Core.Flags.SOCKETED, Core.Flags.NORMAL)) {
-                
-                    name = 'Socketed ' + name + ' [' + e[2].sockets.length + ']';
-                
-                } 
-                
-                if (this.is(e, Core.Flags.INFERIOR)) {
-                
-                    name = 'Inferior ' + name;
-                
-                } else if (this.is(e, Core.Flags.GOOD)) {
-                
-                    name = 'Good ' + name;
-                
-                } else if (this.is(e, Core.Flags.EXCEPTIONAL)) {
-                
-                    name = 'Exceptional ' + name;
-                
-                } else if (this.is(e, Core.Flags.ETHERAL)) {
-                
-                    name = 'Etheral ' + name;
-                
-                }
-                
-                if (this.is(e, Core.Flags.WEAPON)) {
-                
-                    name = name + ' { ' + this.attr(e, 'minDmg').toFixed(1) + ' - ' + this.attr(e, 'maxDmg').toFixed(1) + ', ' + this.dps(e).toFixed(1) + 'dps } ';
-                
-                } else if (this.is(e, Core.Flags.ARMOR)) {
-                
-                    name = name + ' { ' + e[2].armor.toFixed(0) + ' } ';
-                
-                }
-                
-                return name;     
-            
-            }, 
-            
-            attr: function(e, a) {
-                
-                var v;
-            
-                if (this.is(e, Core.Flags.ITEM)) {
-                
-                    if (e[2][a]) {
-                    
-                        v = e[2][a];
-                    
-                    }
-                    
-                    if (e[2].affixes && e[2].affixes[a]) {
-                    
-                        if (v) {
-                        
-                            if (a.indexOf('_p') != -1) {
-                        
-                                v *= e[2].affixes[a];
-                            
-                            } else {
-                            
-                                v += e[2].affixes[a];
-                            
-                            }
-                        
-                        } else {
-                        
-                            v = e[2].affixes[a];
-                        
-                        }
-                    
-                    }
-                
-                } else if (e[a]) {
-                
-                    v = e[a];    
-                
-                }
-                
-                //console.log(a, v, e);
-                
-                return v;
-            
-            },
-            
-            attrP: function(e, a, base) {
-            
-                return (this.attr(e, a) || 0) / 100 + (base || 1);
-            
-            },  
-            
-            attackSpeed: function(e) {
-            
-                if (this.is(e, Core.Flags.WEAPON)) {
-                
-                    return this.attr(e, 'as') * this.attrP(e, 'ias_p');
-                
-                }
-            
-            }, 
-            
-            damage: function(e) {
-            
-                if (this.is(e, Core.Flags.WEAPON)) {
-                    
-                    return ((this.attr(e, 'minDmg') + this.attr(e, 'maxDmg')) / 2) * this.attrP(e, 'dmg_p');
-                  
-                }
-            
-            }, 
-            
-            dps: function(e) {
-            
-                var dmg;
-            
-                if (this.is(e, Core.Flags.WEAPON)) {
-                                                                                                    
-                    dmg = this.damage(e);
-                    
-                    return (dmg + (dmg * this.attrP(e, 'critDmg_p') * this.attrP(e, 'critChance_p', 0))) * this.attackSpeed(e);  
-                
-                } 
-                
-                return dps;  
+                return this.name(e);   
             
             }, 
         
@@ -787,8 +893,7 @@
             // slot hint is used to indicate e.g. weapon2, token3 or ring2
             slot: function(item, slotHint) {
             
-                var F = Core.Flags, 
-                    a = [
+                var a = [
                         [F.WEAPON, [F.WEAPON1, F.WEAPON2]], 
                         [F.TOKEN, [F.TOKEN1, F.TOKEN2, F.TOKEN3]], 
                         [F.RING, [F.RING1, F.RING2]],
@@ -835,6 +940,9 @@
         }
     
     }
+    
+    var Utils = Core.Utils;
+    var F = Core.Flags;
     
     if (typeof module !== 'undefined') {
     

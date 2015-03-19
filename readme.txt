@@ -1,3 +1,6 @@
+2015-03-19/6
+Damage/hit handling, net event handler reuse
+
 2015-03-18/4
 SpawnPoints, LandingPoints
 

@@ -55,6 +55,7 @@ var Net = {
         
         if (success) {
         
+            Net.socket.removeListener(returnMsg || msg, success);
             Net.socket.on(returnMsg || msg, success);
         
         }
@@ -65,6 +66,7 @@ var Net = {
     
     bind: function(msg, success) {
     
+        Net.socket.removeListener(msg, success);    
         Net.socket.on(msg, success);
     
     } 
