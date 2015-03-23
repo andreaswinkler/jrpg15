@@ -1,3 +1,13 @@
+var Utils = Core.Utils,
+    F = Core.Flags, 
+    K = [];
+        
+_.each(F, function(value, key) {
+    
+    K[value] = key;
+
+});  
+
 function _center() {
 
     $('.center').each(function(ind, e) {

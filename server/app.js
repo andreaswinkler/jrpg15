@@ -48,6 +48,14 @@ io.sockets.on('connection', function(socket) {
     
         switch (d[0]) {
         
+            case 'grab':
+            
+                js.grab(socket, d[1]);
+                
+                socket.emit('grab', d[1]);
+            
+                break;
+        
             case 'unequip':
             
                 js.unequip(socket, d[1], d[2]);

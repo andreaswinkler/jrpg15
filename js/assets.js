@@ -12,6 +12,8 @@ var Assets = {
     // possible values are low, medium and high
     // the setting should only be set on startup
     quality: 'medium', 
+    
+    dir: 'assets/medium/',
 
     // this method is used to extract all assetIds from a list of objects
     // the list contains not only the assets of the objects themselves 
@@ -92,7 +94,7 @@ var Assets = {
             if (assetId.indexOf('.png') != -1) {
         
                 a = new Image();
-                a.src = 'assets/' + Assets.quality + '/' + assetId;
+                a.src = Assets.dir + assetId;
 
                 // if a callback was specified we bind it to the images 
                 // onload event
@@ -151,6 +153,34 @@ var Assets = {
         // afterwards we can safely return the asset referenced by the 
         // assetId. If it's still loading, an empty image is returned
         return Assets.store[obj.assetId];
+    
+    }, 
+    
+    // get the background setting for an item from a sprite sheet
+    background: function(asset) {
+    
+        return this.backgroundCSS(
+            Assets.dir + asset[0], 
+            asset[1] * Core.Settings.assets[asset[0]].spriteDimensions[0] * -1, 
+            asset[2] * Core.Settings.assets[asset[0]].spriteDimensions[1] * -1
+        );
+    
+    }, 
+    
+    backgroundCSS: function(url, hpos, vpos) {
+    
+        return 'background-image:url(' + url + ');background-position:' + hpos + 'px ' + vpos + 'px';
+    
+    }, 
+    
+    // get the rarity background for a given item
+    rankBackground: function(item) {
+    
+        return this.backgroundCSS(
+            Assets.dir + 'item-ranks.png', 
+            [F.NORMAL, F.MAGIC, F.RARE, F.SET, F.LEGENDARY].indexOf((Utils.itemRank(item)[0])) * Core.Settings.assets['item-ranks.png'].spriteDimensions[0] * -1, 
+            0
+        );
     
     }
 

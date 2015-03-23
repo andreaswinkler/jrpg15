@@ -105,8 +105,8 @@
             var blueprint = Utils.blueprintBySingleFlag(blueprintFlag), 
                 itemType = Utils.itemTypeByBlueprint(blueprint), 
                 level = level || 1, 
-                rank = rank || F.NORMAL, 
-                quality = quality || F.STANDARD; 
+                rank = Utils.rank(rank || F.NORMAL), 
+                quality = Utils.quality(quality || F.STANDARD); 
 
             return this.createItem(itemType, level, 0, 0, blueprint, rank, quality);
         
@@ -195,7 +195,29 @@
 
                         break;     
                 
-                }    
+                } 
+                
+                item[2].c = {};
+                item[2].levelReq = item[2].c.levelReq = sourceLevel;
+                
+                if (item[2].minDmg) {
+                
+                    item[2].c.minDmg = item[2].minDmg;
+                    item[2].c.maxDmg = item[2].maxDmg;
+                    item[2].c.as = item[2].as;
+                    item[2].c.dps = (item[2].c.minDmg + item[2].c.maxDmg) / 2 * item[2].c.as;
+                
+                } else if (item[2].armor) {
+                
+                    item[2].c.armor = item[2].armor;
+                
+                }
+                
+                if (item[2].durability) {
+                
+                    item[2].c.durability = item[2].durability;
+                
+                }  
             
             }
             
@@ -898,32 +920,6 @@
         
         },
         
-        // return the first item the player has stored in a given location
-        // optionally details can be provided to indicate e.g. an equipment 
-        // slot
-        itemByLocation: function(player, location, detail) {
-        
-            return _.find(player.items, function(i) { 
-            
-                return i[4][0] == location && (detail ? i[4][1] == detail : true);
-            
-            });
-        
-        },
-        
-        // return all items the player has stored in a given location
-        // optionally details can be provided to indicate e.g. an equipment 
-        // slot
-        itemsByLocation: function(player, location, detail) {
-        
-            return _.filter(player.items, function(i) {
-                        
-                return i[4][0] == location && (detail ? i[4][1] == detail : true);    
-            
-            });
-        
-        },   
-        
         // change the location of an item by passing in a location flag
         // optionally a more detailed information can be provided to indicate 
         // e.g. an equipment slot, a grid position or global map coordinates
@@ -938,17 +934,17 @@
         grab: function(socket, itemId) {
         
             var item = this.item(socket.player, itemId), 
-                spaceKey;
+                space;
             
             if (item) {
             
                 // check if we need to remove the item from a space 
                 // e.g.: inventory or stash
-                spaceKey = _.find(socket.player.spaces, function(i) { return i[0] == item[4][0]; });
+                space = _.find(socket.player.spaces, function(i) { return i[0] == item[4][0]; });
                 
-                if (spaceKey) {
+                if (space) {
                 
-                    this.removeItemFromSpace(socket.player, spaceKey, item);    
+                    this.removeItemFromSpace(socket.player, space, item);    
                 
                 }
                 
@@ -963,7 +959,7 @@
         putToSpace: function(socket, spaceKey) {
         
             // get the item the player has currently in hand
-            var item = this.itemByLocation(socket.player, F.HAND);
+            var item = Utils.itemByLocation(socket.player, F.HAND);
             
             // if we could find one we add it to the inventory
             if (item) {
@@ -978,7 +974,7 @@
         place: function(socket, spaceKey, row, col) {
         
             // get the item the player has currently in hand
-            var item = this.itemByLocation(socket.player, F.HAND);
+            var item = Utils.itemByLocation(socket.player, F.HAND);
             
             if (item) {
             
@@ -1096,7 +1092,7 @@
         // compare to the item 
         getStack: function(player, location, item) {
         
-            return _.find(this.itemsByLocation(player, location), function(i) {
+            return _.find(Utils.itemsByLocation(player, location), function(i) {
             
                 return Utils.is(i, item[1]);
             
@@ -1154,10 +1150,9 @@
         }, 
         
         // remove item from space
-        removeItemFromSpace: function(player, spaceKey, item) {
+        removeItemFromSpace: function(player, space, item) {
         
-            var space = player.spaces[spaceKey], 
-                grid = space[3] || this.createGrid(player, space);
+            var grid = space[3] || this.createGrid(player, space);
             
             this.removeItemFromGrid(grid, item, item[4][1][0], item[4][1][1]);                
         
@@ -1267,7 +1262,7 @@
         
             // loop through all player's items assigned to the space and 
             // mark its space in the grid
-            _.each(this.itemsByLocation(player, space[0]), function(i) {
+            _.each(Utils.itemsByLocation(player, space[0]), function(i) {
 
                 this.addItemToGrid(space[3], i, i[4][1][0], i[4][1][1]);  
             

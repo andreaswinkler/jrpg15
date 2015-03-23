@@ -24,25 +24,25 @@
             "Health Potion", 1, 100, 0.5, 
             ["healthpotion", "potion", "autopickup"], 
             "Restores {settings.healthpotion_restore_percent}% of your health and has a {settings.healthption_cooldown_duration_seconds} cooldown.",
-            { "stack": 1 }
+            { "stack": 1, "asset": ["potions.png", 0, 0] }
         ], 
         [
             "Chipped Ruby", 1, 10, 1, 
             ["gem", "ruby", "ornament", "chipped"], 
             "", 
-            { "weapon": [["minDmg", 1], ["maxDmg", 2]], "headpiece": [["bonusXp", 10]], "armor": [["str", 10]], "jewelry": [["critDmg", 10]], "stack": 1 }
+            { "weapon": [["minDmg", 1], ["maxDmg", 2]], "headpiece": [["bonusXp", 10]], "armor": [["str", 10]], "jewelry": [["critDmg", 10]], "stack": 1, "asset": ["gems.png", 0, 0] }
         ], 
         [
             "Flawed Ruby", 9, 20, 1, 
             ["gem", "ruby", "ornament", "flawed"], 
             "", 
-            { "weapon": [["minDmg", 2], ["maxDmg", 4]], "headpiece": [["bonusXp", 12.5]], "armor": [["str", 15]], "jewelry": [["critDmg", 15]] }
+            { "weapon": [["minDmg", 2], ["maxDmg", 4]], "headpiece": [["bonusXp", 12.5]], "armor": [["str", 15]], "jewelry": [["critDmg", 15]], "stack": 1, "assetId": ["gems.png", 0, 1] }
         ],
         [
             "Small Sword", 1, 10, 1, 
             ["weapon", "onehand", "sword", "item", "smallsword"], 
             "A butter knife.", 
-            { "minDmg": 1, "maxDmg": 3, "as": 1.2 },
+            { "minDmg": 1, "maxDmg": 3, "as": 1.2, "durability": 10, "asset": ["swords.png", 0, 0] },
             { "sockets": [0, 3] } 
         ]
     ],
@@ -67,11 +67,11 @@
         ]
     }, 
     "itemRanks": [
-        ["normal", 1, 1, 100], 
-        ["magic", 0.3, 1, 100, [[1, 0.5], [2, 0.5]]], 
-        ["rare", 0.2, 1, 100, [[3, 0.5], [4, 0.4], [5, 0.1]]], 
-        ["set", 0.05, 15, 100], 
-        ["legendary", 0.05, 15, 100] 
+        ["normal", 1, 1, 100, null, ""], 
+        ["magic", 0.3, 1, 100, [[1, 0.5], [2, 0.5]], "Magic "], 
+        ["rare", 0.2, 1, 100, [[3, 0.5], [4, 0.4], [5, 0.1]], "Rare "], 
+        ["set", 0.05, 15, 100, null, "Set "], 
+        ["legendary", 0.05, 15, 100, null, "Legendary "] 
     ],
     "itemQualities": [
         ["inferior", 0.2, 1, 100, 0.85], 
@@ -81,11 +81,16 @@
         ["etheral", 0.05, 1, 100, 1.4]
     ],
     "labels": {
-        "dmg": "+#% damage", 
-        "critChance": "+#% critical hit chance", 
-        "maxDmg": "+# maximum damage", 
-        "critDmg": "+#% critical hit damage",
-        "sockets": "Sockets (#)"
+        "dmg": "{+#%} damage", 
+        "critChance": "{+#%} critical hit chance", 
+        "maxDmg": "{+#} maximum damage", 
+        "critDmg": "{+#%} critical hit damage",
+        "sockets": "Sockets ({#})", 
+        "minDmg": "{+#} minimum damage", 
+        "str": "{+#} Strength", 
+        "int": "{+#} Intelligence", 
+        "dex": "{+#} Dexterity", 
+        "vit": "{+#} Vitality"
     },
     "settings": {
         "healthpotion_restore_percent": 60,
@@ -104,6 +109,18 @@
         "hystrix.png": {
             "spriteDimensions": [100, 105],
             "hitboxOffset": [0, 0, 0, 0]
+        },
+        "gems.png": {
+            "spriteDimensions": [30, 30]
+        },
+        "potions.png": {
+            "spriteDimensions": [30, 30]
+        }, 
+        "swords.png": {
+            "spriteDimensions": [46, 90]
+        },
+        "item-ranks.png": {
+            "spriteDimensions": [46, 90]
         }
     },  
     "rareNames1": ["Vile", "Evil", "Azure", "Cobalt", "Mirror", "Soul", "Meat", "Flesh", "Skin", "Moon", "Sun", "Neptune", "Mars", "Mercury", "Venus", "Earth", "Jupiter", "Saturn", "Uranus"], 

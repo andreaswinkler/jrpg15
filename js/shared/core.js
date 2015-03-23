@@ -120,7 +120,9 @@
             LETHAL: 98, 
             IMMUNE: 99, 
             DEAD: 100, 
-            HERO: 101
+            HERO: 101, 
+            EQUIPPED: 102, 
+            INDESTRUCTIBLE: 103
         }, 
         
         Settings: null, 
@@ -699,20 +701,8 @@
             
             // returns the itemType based on a blueprint
             itemTypeByBlueprint: function(blueprint) {
-            
-                var itemType;
-            
-                _.each(['WEAPON', 'ARMOR', 'JEWELRY', 'MATERIAL', 'ORNAMENT', 'UTILITY', 'QUEST', 'OTHER'], function(i) {
-                
-                    if (blueprint[4].indexOf(F[i]) != -1) {
-                    
-                        itemType = i;
-    
-                    }    
-                
-                });
-                
-                return itemType;
+
+                return _.find([F.WEAPON, F.ARMOR, F.JEWELRY, F.MATERIAL, F.ORNAMENT, F.UTILITY, F.QUEST, F.OTHER], function(i) { return blueprint[4].indexOf(i) != -1; });
             
             }, 
             
@@ -935,7 +925,84 @@
                 
                 }
             
-            }           
+            }, 
+            
+            rank: function(flag) {
+            
+                return _.find(Core.Settings.itemRanks, function(i) { return i[0] == flag; });
+            
+            }, 
+            
+            quality: function(flag) {
+            
+                return _.find(Core.Settings.itemQualities, function(i) { return i[0] == flag; });            
+            
+            }, 
+            
+            // returns which of the passed flags is set by the passed element
+            isWhichOf: function(e, flags) {
+            
+                return _.find(flags, function(i) { return Utils.is(e, i); });
+            
+            }, 
+            
+            // returns the rank of an item
+            itemRank: function(item) {
+                
+                return _.find(Core.Settings.itemRanks, function(i) { return Utils.is(item, i[0]); }) || [F.NORMAL, 1, 1, 100, null, ""];
+            
+            }, 
+            
+            // returns a modifier from an ornament based on the parent item
+            ornamentModifier: function(ornament, item) {
+                        
+                if (Utils.is(item, F.WEAPON)) {
+                
+                    return ornament[2].weapon;
+                
+                } else if (Utils.is(item, F.HEADPIECE)) {
+                
+                    return ornament[2].headpiece;
+                
+                } else if (Utils.is(item, F.ARMOR)) {
+                
+                    return ornament[2].armor;
+                                                
+                } else if (Utils.is(item, F.JEWELRY)) {
+                
+                    return ornament[2].jewelry;
+                                    
+                }
+                
+                return null;
+            
+            }, 
+            
+            // return the first item the player has stored in a given location
+            // optionally details can be provided to indicate e.g. an equipment 
+            // slot
+            itemByLocation: function(player, location, detail) {
+            
+                return _.find(player.items, function(i) { 
+                
+                    return i[4][0] == location && (detail ? i[4][1] == detail : true);
+                
+                });
+            
+            },
+            
+            // return all items the player has stored in a given location
+            // optionally details can be provided to indicate e.g. an equipment 
+            // slot
+            itemsByLocation: function(player, location, detail) {
+            
+                return _.filter(player.items, function(i) {
+                            
+                    return i[4][0] == location && (detail ? i[4][1] == detail : true);    
+                
+                });
+            
+            }            
         
         }
     

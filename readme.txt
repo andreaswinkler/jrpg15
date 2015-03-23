@@ -1,3 +1,6 @@
+2015-03-23/2
+Inventory, put item in hand
+
 2015-03-19/6
 Damage/hit handling, net event handler reuse
 

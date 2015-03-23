@@ -16,7 +16,13 @@ var UI = {
     elements: {}, 
 
     // the mouse position
-    mouse: { x: 0, y: 0 }, 
+    mouse: { x: 0, y: 0 },
+    
+    // a dragged element
+    eDragged: null,  
+
+    // the current inventory tile size in pixels
+    inventoryTileSize: 40,  
 
     // initialize the UI by passing a parent DOM element (e.g. body)
     init: function() {
@@ -28,6 +34,8 @@ var UI = {
         
         // bind the key event listener
         UI.initKeyEvents();
+        
+        Net.bind('grab', UI.grab);
     
     }, 
     
@@ -43,6 +51,13 @@ var UI = {
                 case 27:
                 
                     UI.escMenu();
+                
+                    break;
+                
+                // i
+                case 73:
+                
+                    UI.inventory();
                 
                     break;
             
@@ -77,6 +92,112 @@ var UI = {
             ], UI.currentScreen);
         
         }
+    
+    }, 
+    
+    inventory: function() {
+    
+        if (UI.mode == 'game') {
+        
+            if (!UI.exists('inventory')) {
+            
+                UI.createInventory();
+                UI.createStatDetails();    
+            
+            } 
+            
+            UI.currentScreen.find('.inventory, .stat-details').toggleClass('active');            
+        
+        }
+    
+    },
+    
+    createStatDetails: function() {
+    
+        // TODO: do something
+    
+    },  
+    
+    createInventory: function() {
+    
+        var e = UI.window('inventory', UI.currentScreen, 'Inventory'), 
+            content = e.find('.window-content'),  
+            stats = $('<div class="stats"></div>'), 
+            inventory = $('<div class="inventory"></div>'), 
+            equipment = $('<div class="equipment"></div>');
+        
+        // add the stat elements
+        _.each(['str', 'vit', 'int', 'dex', 'toughness', 'dps', 'healing', 'gold'], function(stat) {
+        
+            stats.append('<div class="stat ' + stat + '"></div>');
+        
+        });
+        
+        content.append(stats);
+        
+        // add the equipment slots
+        _.each(['headpiece', 'chestarmor', 'amulet', 'ring1', 'ring2', 'shoulders', 'bracers', 'gloves', 'belt', 'pants', 'boots', 'token1', 'token2', 'token3', 'offhand1', 'offhand2', 'weapon1', 'weapon2'], function(slot) {
+        
+            equipment.append('<div class="slot ' + slot + '" data-slot="' + slot + '"></div>');
+        
+        });
+        
+        content.append(equipment);
+        
+        // add the inventory itself
+        content.append(inventory); 
+        
+        // append the inventory to the current screen
+        UI.currentScreen.append(e); 
+        
+        // add all equipment items
+        _.each(Game.hero.equipment, function(item) {
+
+            equipment.find('.' + K[item[4][1]].toLowerCase()).append(UI.item(item));    
+        
+        });  
+        
+        // add all inventory items
+        _.each(Utils.itemsByLocation(Lobby.user, F.INVENTORY), function(item) {
+
+            UI.addToSpace(inventory, UI.item(item), item[4][1], UI.requestGrab, UI.requestEquip);
+        
+        });
+    
+    },  
+    
+    requestGrab: function(ev) {
+    
+        Net.send('cmd', ['grab', parseInt($(ev.target).closest('.item').attr('data-id'))]);
+    
+    }, 
+    
+    requestEquip: function(ev) {
+    
+        Net.send('cmd', ['equip', parseInt($(ev.target).closest('.item').attr('data-id'))]);
+    
+    }, 
+    
+    addToSpace: function(space, eItem, pos, leftClick, rightClick) {
+    
+        eItem.css('left', (pos[0] * UI.inventoryTileSize) + 'px');
+        eItem.css('top', (pos[1] * UI.inventoryTileSize) + 'px');
+        
+        eItem.unbind();
+        
+        if (leftClick) {
+        
+            eItem.click(leftClick);
+        
+        }
+        
+        if (rightClick) {
+        
+            eItem.bind('contextmenu', rightClick);
+        
+        }
+        
+        space.append(eItem);        
     
     }, 
     
@@ -291,9 +412,15 @@ var UI = {
             return UI.onGameScreenClick(1, ev.pageX, ev.pageY);
         
         }).mousemove(function(ev) {
-        
+            
             UI.mouse.x = ev.pageX;
             UI.mouse.y = ev.pageY;
+            
+            if (UI.eDragged) {
+            
+                UI.drag();
+            
+            }
         
         });
     
@@ -467,6 +594,184 @@ var UI = {
             eItem.click(i[1]);            
         
         });
+        
+        return e;
+    
+    }, 
+    
+    // returns the type of an item
+    itemType: function(item) {
+
+        return Utils.itemRank(item)[5] + Utils.blueprint(item[1])[0];
+    
+    }, 
+    
+    // returns the slot of an item
+    itemSlot: function(item) {
+    
+        if (Utils.is(item, F.ONEHAND)) {
+        
+            return '1-hand';
+        
+        } 
+        
+        return '';   
+    
+    }, 
+    
+    // formats an affix to be readable
+    affix: function(affix) {
+    
+        var affixList = affix.length == 1 ? [affix] : affix, 
+            s = '';
+        
+        _.each(affixList, function(i) {
+        
+            s += Core.Settings.labels[i[0]].replace('#', i[1]).replace(/\{(.*)\}/, '<small class="white">$1</small>');
+        
+        });
+        
+        return s;                                     
+    
+    }, 
+    
+    drag: function() {
+
+        UI.eDragged.css('left', UI.mouse.x + 'px');
+        UI.eDragged.css('top', UI.mouse.y + 'px');    
+    
+    }, 
+    
+    grab: function(itemId) {
+    
+        UI.eDragged = UI.currentScreen.find('.item[data-id="' + itemId + '"]');
+        
+        UI.eDragged.detach().appendTo(UI.currentScreen);
+        
+        UI.drag();
+    
+    }, 
+    
+    // create an item element
+    // the item element exists from pickup until the item is dropped to the 
+    // floor or gets destroyed
+    item: function(item) {
+    
+        var e = $('<div class="item" style="' + Assets.rankBackground(item) + '" data-id="' + item[0] + '"><div class="item-image" style="' + Assets.background(item[2].asset) + '"></div></div>');
+        
+        if (item[2].sockets) {
+        
+            e.find('.item-image').append(this.sockets(item[2].sockets));
+        
+        } 
+        
+        // add the tooltip
+        e.get(0).tooltip = UI.itemTooltip(UI.container, item);
+            
+        e.mouseenter(function(ev) {
+        
+            this.tooltip.appendTo(this);
+        
+        }).mouseleave(function(ev) {
+        
+            $(this).find('.item-tooltip').remove();
+        
+        });
+        
+        return e;   
+    
+    }, 
+    
+    // create the sockets block for an item
+    sockets: function(sockets) {
+    
+        var s = '<ul class="item-sockets">';
+            
+        _.each(sockets, function(i) {
+        
+            if (i) {
+            
+                s += '<li class="socket">';
+                
+                s += '<div style="' + Assets.background(i) + '"></div>';
+                s += '<span class="affix">' + UI.affix(Utils.ornamentModifier(i, ornament)) + '</span>';
+                
+                s += '</li>';    
+            
+            } else {
+            
+                s += '<li class="socket"></li>';        
+            
+            }
+        
+        });
+        
+        s += '</ul>';
+        
+        return s;
+    
+    }, 
+    
+    // create a tooltip for a given item
+    itemTooltip: function(container, item) {
+    
+        var isEquipped = Utils.is(item, F.EQUIPPED), 
+            e = UI.window('item-tooltip', container, Utils.name(item)), 
+            affixes;
+        
+        e.append('<div class="item-image-container" style="' + Assets.rankBackground(item) + '"><div class="item-image" style="' + Assets.background(item[2].asset) + '"></div></div>');
+        
+        e.append('<div class="item-type">' + UI.itemType(item) + '</div>');
+        
+        e.append('<div class="item-slot">' + UI.itemSlot(item) + '</div>');
+        
+        if (Utils.is(item, F.ARMOR)) {
+        
+            e.append('<div class="item-mainstat">' + item[2].c.armor + '<small>Armor</small></div>');
+        
+        } else if (Utils.is(item, F.WEAPON)) {
+        
+            e.append('<div class="item-mainstat">' + item[2].c.dps.toFixed(1) + '<small>Damage per second</small><br /><small class="white">' + item[2].c.minDmg.toFixed(1) + '</small><small>-</small><small class="white">' + item[2].c.maxDmg.toFixed(1) + '</small><small>Damage</small><br /><small class="white">' + (item[2].c.as).toFixed(2) + '</small><small>Attacks per Second</small></div>');
+        
+        }
+        
+        if (item[2].affixes) {
+        
+            affixes = '<ul class="item-affixes">';
+            
+            _.each(item[2].affixes, function(i) {
+            
+                affixes += '<li><span class="affix">' + UI.affix(i) + '</span></li>';
+            
+            });
+            
+            affixes += '</ul>';
+            
+            e.append(affixes);
+        
+        }
+        
+        if (item[2].sockets) {
+        
+            e.append(UI.sockets(item[2].sockets));
+        
+        }
+        
+        e.append('<div class="item-level-requirement"><small>Required Level: </small><small class="white">' + item[2].c.levelReq + '</small></div>');
+        
+        if (item[2].c.durability) {
+        
+            if (Utils.is(item, F.INDESTRUCTIBLE)) {
+            
+                e.append('<div class="item-durability indestructible">Indestructible</div>');
+            
+            } else {
+        
+                e.append('<div class="item-durability"><small>Durability: </small><small class="white">' + item[2].c.durability + '</small><small>/</small><small>' + item[2].durability + '</small></div>');
+            
+            }
+        
+        }
         
         return e;
     
