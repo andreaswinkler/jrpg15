@@ -22,7 +22,7 @@ var UI = {
     eDragged: null,  
 
     // the current inventory tile size in pixels
-    inventoryTileSize: 40,  
+    spaceCellSize: 40,  
 
     // initialize the UI by passing a parent DOM element (e.g. body)
     init: function() {
@@ -36,7 +36,19 @@ var UI = {
         UI.initKeyEvents();
         
         Net.bind('grab', UI.grab);
+        Net.bind('place', UI.place);
     
+    }, 
+    
+    resize: function() {
+    
+        UI.currentScreen.find('.space').each(function(ind, e) {
+        
+            $(e).css('background-size', UI.spaceCellSize + 'px ' + UI.spaceCellSize + 'px')
+                .css('background-image:repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px, transparent ' + UI.spaceCellSize + 'px),repeating-linear-gradient(-90deg, #fff, #fff 1px, transparent 1px, transparent ' + UI.spaceCellSize + 'px');
+        
+        });
+
     }, 
     
     initKeyEvents: function() {
@@ -63,9 +75,64 @@ var UI = {
             
             }
         
+        }).mousemove(function(ev) {
+        
+            var e = $(ev.target);
+        
+            // store the cursor position for further use
+            UI.mouse.x = ev.pageX;
+            UI.mouse.y = ev.pageY;
+
+            // we have something in hand, let's update its position with 
+            // the current cursor position
+            if (UI.eDragged) {
+
+                UI.drag();
+                
+                // if we hover over a space (e.g. inventory) we assume the 
+                // player wants to place the item in hand and we indicate 
+                // whether or not the cells corresponding to the cursor 
+                // position are available
+                if (e.closest('.space').length > 0) {
+                    
+                    var startPos = UI.spacePosition(e.closest('.space')), 
+                        available = UI.spaceCellsAvailable(
+                            startPos[0], 
+                            startPos[1],
+                            UI.eDragged.get(0).item[2].spaceWidth || 1, 
+                            UI.eDragged.get(0).item[2].spaceHeight || 1
+                        ), 
+                        eHilite = e.find('.hilite');
+                    
+                    if (available) {
+                    
+                        eHilite.removeClass('occupied');
+                    
+                    } else {
+                    
+                        eHilite.addClass('occupied');
+                    
+                    }
+                    
+                    UI.setSpacePosition(eHilite, startPos[0], startPos[1]);                    
+                
+                }
+            
+            }            
+
         });
     
     },
+    
+    spaceCellsAvailable: function(space, row, col, w, h) {
+    
+        return _.find(Utils.itemsByLocation(Lobby.user, space), function(i) {
+        
+            return i[4][1][0] >= col && i[4][1][0] <= col + w && i[4][1][1] >= row && i[4][1][1] <= row + h;
+        
+        }) === undefined;
+    
+    }, 
     
     update: function() {
     
@@ -118,12 +185,56 @@ var UI = {
     
     },  
     
+    createSpace: function(spaceKey) {
+    
+        var e = $('<div class="' + spaceKey + ' space" data-spaceKey="' + spaceKey + '"></div>');
+        
+        // add the click event (place item)
+        e.click(function(ev) {
+        
+            var e, pos;
+            
+            if (UI.eDragged) {
+            
+                e = $(this);
+                pos = UI.spacePosition(e);
+
+                UI.requestPlace(e.attr('data-spaceKey'), pos[0], pos[1]); 
+            
+            }
+        
+        }).mouseenter(function(ev) {
+        
+            var e = $(ev.target).closest('.space');
+            
+            if (e.find('.hilite').length == 0) {
+            
+                e.append('<div class="hilite"></div>');
+                
+                if (UI.eDragged) {
+                
+                    UI.resizeHilites();
+                
+                }
+            
+            }
+        
+        }).mouseleave(function(ev) {
+        
+            $(ev.target).closest('.space').find('.hilite').remove();
+        
+        });                                        
+        
+        return e; 
+    
+    }, 
+    
     createInventory: function() {
     
         var e = UI.window('inventory', UI.currentScreen, 'Inventory'), 
             content = e.find('.window-content'),  
             stats = $('<div class="stats"></div>'), 
-            inventory = $('<div class="inventory"></div>'), 
+            inventory = UI.createSpace('inventory'), 
             equipment = $('<div class="equipment"></div>');
         
         // add the stat elements
@@ -143,7 +254,7 @@ var UI = {
         });
         
         content.append(equipment);
-        
+
         // add the inventory itself
         content.append(inventory); 
         
@@ -166,6 +277,14 @@ var UI = {
     
     },  
     
+    spacePosition: function(space) {
+    
+        var offset = space.offset();
+
+        return [~~((UI.mouse.y - offset.top) / UI.spaceCellSize), ~~((UI.mouse.x - offset.left) / UI.spaceCellSize)];
+    
+    }, 
+    
     requestGrab: function(ev) {
     
         Net.send('cmd', ['grab', parseInt($(ev.target).closest('.item').attr('data-id'))]);
@@ -176,14 +295,32 @@ var UI = {
     
         Net.send('cmd', ['equip', parseInt($(ev.target).closest('.item').attr('data-id'))]);
     
+    },
+    
+    requestPlace: function(spaceKey, row, col) {
+    
+        Net.send('cmd', ['place', spaceKey, row, col]);    
+    
+    },  
+    
+    setSpacePosition: function(e, row, col) {
+    
+        e.css('left', (col * UI.spaceCellSize) + 'px').css('top', (row * UI.spaceCellSize) + 'px');
+    
+    }, 
+    
+    setSpaceDimensions: function(e, item) {
+    
+        e.width((item[2].spaceWidth || 1) * UI.spaceCellSize).height((item[2].spaceHeight || 1) * UI.spaceCellSize);    
+    
     }, 
     
     addToSpace: function(space, eItem, pos, leftClick, rightClick) {
     
-        eItem.css('left', (pos[0] * UI.inventoryTileSize) + 'px');
-        eItem.css('top', (pos[1] * UI.inventoryTileSize) + 'px');
+        UI.setSpacePosition(eItem, pos[1], pos[0]);
+        UI.setSpaceDimensions(eItem, eItem.get(0).item);
         
-        eItem.unbind();
+        eItem.unbind('click').unbind('contextmenu');
         
         if (leftClick) {
         
@@ -325,17 +462,7 @@ var UI = {
         
         if (tooltip) {
         
-            e.get(0).tooltip = $('<div class="tooltip">' + tooltip + '</div>');
-            
-            e.mouseenter(function(ev) {
-            
-                this.tooltip.appendTo(this);
-            
-            }).mouseleave(function(ev) {
-            
-                $(this).find('.tooltip').remove();
-            
-            });
+            UI.enableTooltip(e, $('<div class="tooltip">' + tooltip + '</div>'));
         
         }
         
@@ -354,6 +481,22 @@ var UI = {
         return e;
     
     },  
+    
+    enableTooltip: function(e, tooltip) {
+    
+        e.get(0).tooltip = tooltip;
+        
+        e.mouseenter(function(ev) {
+        
+            this.tooltip.appendTo(this);
+        
+        }).mouseleave(function(ev) {
+            
+            $(this).find('.tooltip').remove();
+        
+        });
+    
+    }, 
     
     // initialize the loading screen by adding the necessary 
     // dom elements
@@ -410,17 +553,6 @@ var UI = {
             ev.preventDefault();
         
             return UI.onGameScreenClick(1, ev.pageX, ev.pageY);
-        
-        }).mousemove(function(ev) {
-            
-            UI.mouse.x = ev.pageX;
-            UI.mouse.y = ev.pageY;
-            
-            if (UI.eDragged) {
-            
-                UI.drag();
-            
-            }
         
         });
     
@@ -635,20 +767,54 @@ var UI = {
     
     }, 
     
+    // reposition a grabbed element (e.g. item) 
+    // based on the mouse cursor
     drag: function() {
 
-        UI.eDragged.css('left', UI.mouse.x + 'px');
-        UI.eDragged.css('top', UI.mouse.y + 'px');    
+        UI.eDragged.css('left', (UI.mouse.x + 10) + 'px');
+        UI.eDragged.css('top', (UI.mouse.y + 10) + 'px');    
     
     }, 
     
+    // grab an item (put from a space to the hand)
     grab: function(itemId) {
+    
+        UI.currentScreen.addClass('dragging');
     
         UI.eDragged = UI.currentScreen.find('.item[data-id="' + itemId + '"]');
         
-        UI.eDragged.detach().appendTo(UI.currentScreen);
+        UI.eDragged.detach().appendTo(UI.currentScreen).unbind('click').unbind('contextmenu');
+        
+        UI.resizeHilites();
         
         UI.drag();
+    
+    },
+    
+    place: function(params) {
+
+        if (UI.eDragged) {
+      
+            UI.addToSpace(UI.currentScreen.find('.window .' + params[0]), UI.eDragged.detach(), [params[2], params[1]], UI.requestGrab, UI.requestEquip);
+            UI.eDragged = null;
+            UI.currentScreen.removeClass('dragging');    
+        
+        } else {
+        
+            console.warn('<place> cmd received when no item in hand.');
+        
+        }
+    
+    },  
+    
+    resizeHilites: function() {
+    
+        UI.currentScreen.find('.hilite').each(function(ind, e) {
+        
+            UI.setSpaceDimensions($(e), UI.eDragged.get(0).item);
+        
+        });
+            
     
     }, 
     
@@ -657,7 +823,7 @@ var UI = {
     // floor or gets destroyed
     item: function(item) {
     
-        var e = $('<div class="item" style="' + Assets.rankBackground(item) + '" data-id="' + item[0] + '"><div class="item-image" style="' + Assets.background(item[2].asset) + '"></div></div>');
+        var e = $('<div class="item" style="' + Assets.rankBackground(item) + '" data-id="' + item[0] + '"><div class="item-image" style="' + Assets.background(item[2].asset) + '"></div><div class="item-stack"></div></div>');
         
         if (item[2].sockets) {
         
@@ -665,18 +831,16 @@ var UI = {
         
         } 
         
+        if (item[2].stack && item[2].stack > 1) {
+        
+            e.find('.item-stack').html(item[2].stack);
+        
+        }
+        
+        e.get(0).item = item;
+        
         // add the tooltip
-        e.get(0).tooltip = UI.itemTooltip(UI.container, item);
-            
-        e.mouseenter(function(ev) {
-        
-            this.tooltip.appendTo(this);
-        
-        }).mouseleave(function(ev) {
-        
-            $(this).find('.item-tooltip').remove();
-        
-        });
+        UI.enableTooltip(e, UI.itemTooltip(UI.container, item));
         
         return e;   
     
@@ -716,7 +880,7 @@ var UI = {
     itemTooltip: function(container, item) {
     
         var isEquipped = Utils.is(item, F.EQUIPPED), 
-            e = UI.window('item-tooltip', container, Utils.name(item)), 
+            e = UI.window('tooltip item-tooltip', container, Utils.name(item)), 
             affixes;
         
         e.append('<div class="item-image-container" style="' + Assets.rankBackground(item) + '"><div class="item-image" style="' + Assets.background(item[2].asset) + '"></div></div>');

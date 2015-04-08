@@ -639,6 +639,13 @@
             
             }, 
             
+            // compare two entities
+            equals: function(e1, e2) {
+            
+                return Utils.is.apply(this, [e1].concat(e2.flags || e2[1]));
+            
+            }, 
+            
             // get a blueprint for a set of flags
             blueprint: function(flags) {
             

@@ -24,7 +24,7 @@
             "Health Potion", 1, 100, 0.5, 
             ["healthpotion", "potion", "autopickup"], 
             "Restores {settings.healthpotion_restore_percent}% of your health and has a {settings.healthption_cooldown_duration_seconds} cooldown.",
-            { "stack": 1, "asset": ["potions.png", 0, 0] }
+            { "stack": 1, "asset": ["potions.png", 0, 0], "spaceWidth": 1, "spaceHeight": 1 }
         ], 
         [
             "Chipped Ruby", 1, 10, 1, 

@@ -488,7 +488,8 @@
             
                 player.items = [];
                 this.createAndEquipItem(socket, F.SMALLSWORD, F.WEAPON1);
-                this.createAndStoreItem(socket, 'inventory', F.HEALTHPOTION);             
+                this.createAndStoreItem(socket, 'inventory', F.HEALTHPOTION); 
+                this.createAndStoreItem(socket, 'inventory', F.HEALTHPOTION);            
             
             }
             
@@ -977,12 +978,12 @@
             var item = Utils.itemByLocation(socket.player, F.HAND);
             
             if (item) {
-            
-                this.addItemToGrid(socket.player.spaces[spaceKey].grid, item, row, col);
+  
+                this.addItemToGrid(socket.player.spaces[spaceKey][3], item, row, col);
             
             }    
         
-        }, 
+        },                                              
         
         // we're asked to pickup an item, let's make some things sure before 
         // we do:
@@ -1094,7 +1095,7 @@
         
             return _.find(Utils.itemsByLocation(player, location), function(i) {
             
-                return Utils.is(i, item[1]);
+                return Utils.equals(i, item);
             
             });
         
@@ -1187,7 +1188,7 @@
         // we assume that a check was performed beforehand to make 
         // sure the grid is empty at the given position
         addItemToGrid: function(grid, item, row, col) {
-
+            
             this.markGridArea(grid, row, col, item[2].spaceWidth || 1, item[2].spaceHeight || 1, 1);
         
         }, 
@@ -1199,9 +1200,6 @@
             var w = item[2].spaceWidth || 1, 
                 h = item[2].spaceHeight || 1, 
                 i, j, k, l, empty;
-            
-            item[2].info = 'getEmptyPosition ' + w + '/' + h + ' - ' + grid.length + '/' + grid[0].length;
-            item[2].gridInfo = [];
             
             // loop through the grid and check for each field if there are 
             // enough empty fields nearby to hold the item

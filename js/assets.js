@@ -182,6 +182,61 @@ var Assets = {
             0
         );
     
+    }, 
+    
+    preRenderParticleSystem: function(id, settings) {
+    
+        var c = document.createElement('canvas'),
+            ct = document.createElement('canvas'),  
+            ctx = c.getContext('2d'), 
+            ctxt = ct.getContext('2d'), 
+            totalFramesWidth = settings.frames * settings.frameWidth, 
+            framesWidth = Math.min(8000, totalFramesWidth), 
+            framesHeight = Math.ceil(totalFramesWidth / 8000) * settings.frameHeight,
+            particleEmitter = new ParticleEmitter(),
+            startFrame = settings.startFrame || 0, 
+            row = -1,   
+            i;
+        
+        c.width = settings.frameWidth;
+        c.height = settings.frameHeight;
+        
+        ct.width = framesWidth;
+        ct.height = framesHeight;
+        
+        particleEmitter = $.extend(particleEmitter, settings.particleEmitter);
+        
+        particleEmitter.init();
+        
+        for (i = 0; i < startFrame + settings.frames; i++) {
+        
+            // render frame to temp canvas
+            c.clearRect(0, 0, c.width, c.height);
+            
+            ctx.save();
+            ctx.globalCompositionOperation = 'lighter';
+            
+            particleEmitter.render(ctx);
+            
+            ctx.restore();
+            
+            // put rendered frame to sprite sheet
+            if (i >= startFrame) {
+            
+                if ((i - startFrame) % 10 == 0) {
+                
+                    row++;
+                
+                }            
+            
+            }
+            
+            ctxt.drawImage(c, ((i - startFrame) % 10) * frameWidth, row * frameHeight, frameWidth, frameHeight);
+        
+        }
+        
+        Assets.store[id] = ct;        
+    
     }
 
 }

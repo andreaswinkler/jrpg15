@@ -98,6 +98,8 @@ io.sockets.on('connection', function(socket) {
             
                 js.place(socket, d[1], d[2], d[3]);
                 
+                socket.emit('place', [d[1], d[2], d[3]]);
+                
                 break;    
                 
         }
