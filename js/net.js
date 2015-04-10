@@ -51,7 +51,7 @@ var Net = {
 
     send: function(msg, data, success, returnMsg) {
     
-        console.log('send <' + msg + '>');
+        console.log('send <' + msg + '>' + (msg == 'cmd' ? ' <' + data[0] + '>' : ''));
         
         if (success) {
         

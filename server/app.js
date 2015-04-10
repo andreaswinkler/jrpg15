@@ -58,13 +58,19 @@ io.sockets.on('connection', function(socket) {
         
             case 'unequip':
             
-                js.unequip(socket, d[1], d[2]);
+                js.unequip(socket, d[1], true);
+                
+                socket.emit('grab', d[1]);
+                
+                socket.emit('place', [d[1]].concat(js.item(socket.player, d[1])[4][1]));
                 
                 break;
             
             case 'equip':
             
                 js.equip(socket, d[1], d[2]);
+                
+                socket.emit('equip', [d[1], js.item(socket.player, d[1])[4][1]]);
                 
                 break;
             

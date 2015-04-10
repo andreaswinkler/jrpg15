@@ -1056,7 +1056,7 @@
                 
                 if (putToInventory) {
                 
-                    this.putToInventory(socket);
+                    this.putToSpace(socket, 'inventory');
                 
                 }
             

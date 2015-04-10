@@ -37,6 +37,7 @@ var UI = {
         
         Net.bind('grab', UI.grab);
         Net.bind('place', UI.place);
+        Net.bind('equip', UI.equip);
     
     }, 
     
@@ -229,6 +230,12 @@ var UI = {
     
     }, 
     
+    label: function(key) {
+    
+        return Core.Settings.labels[key] || key; 
+    
+    }, 
+    
     createInventory: function() {
     
         var e = UI.window('inventory', UI.currentScreen, 'Inventory'), 
@@ -238,9 +245,9 @@ var UI = {
             equipment = $('<div class="equipment"></div>');
         
         // add the stat elements
-        _.each(['str', 'vit', 'int', 'dex', 'toughness', 'dps', 'healing', 'gold'], function(stat) {
+        _.each(['str', 'vit', 'int', 'dex', 'armor', 'toughness', 'dps', 'healing', 'gold'], function(stat) {
         
-            stats.append('<div class="stat ' + stat + '"></div>');
+            stats.append('<div class="stat" data-stat="' + stat + '"><label>' + UI.label('stat_' + stat) + '</label><span class="value"></span></div>');
         
         });
         
@@ -249,7 +256,21 @@ var UI = {
         // add the equipment slots
         _.each(['headpiece', 'chestarmor', 'amulet', 'ring1', 'ring2', 'shoulders', 'bracers', 'gloves', 'belt', 'pants', 'boots', 'token1', 'token2', 'token3', 'offhand1', 'offhand2', 'weapon1', 'weapon2'], function(slot) {
         
-            equipment.append('<div class="slot ' + slot + '" data-slot="' + slot + '"></div>');
+            var e = $('<div class="slot ' + slot + '" data-slot="' + slot + '"></div>');
+            
+            e.click(function(ev) {
+            
+                var e = $(ev.target).closest('.slot');
+            
+                if (UI.eDragged) {
+                
+                    Net.send('cmd', ['equip', parseInt(UI.eDragged.attr('data-id')), e.attr('data-slot')]);
+                
+                }
+            
+            });
+            
+            equipment.append(e);
         
         });
         
@@ -264,18 +285,33 @@ var UI = {
         // add all equipment items
         _.each(Game.hero.equipment, function(item) {
 
-            equipment.find('.' + K[item[4][1]].toLowerCase()).append(UI.item(item));    
+            UI.placeItemInSlot(UI.item(item), K[item[4][1]].toLowerCase());  
         
         });  
         
         // add all inventory items
         _.each(Utils.itemsByLocation(Lobby.user, F.INVENTORY), function(item) {
 
-            UI.addToSpace(inventory, UI.item(item), item[4][1], UI.requestGrab, UI.requestEquip);
+            UI.placeItemInInventory(UI.item(item), item[4][1]);
         
         });
+        
+        UI.updateStats();
     
     },  
+    
+    // update all stats (and details) with the current hero values
+    updateStats: function() {
+    
+        UI.currentScreen.find('.inventory .stats .stat').each(function(ind, e) {
+        
+            var e = $(e);
+            
+            e.find('.value').html(Game.hero.c[e.attr('data-stat')]);
+        
+        });    
+    
+    }, 
     
     spacePosition: function(space) {
     
@@ -285,21 +321,39 @@ var UI = {
     
     }, 
     
-    requestGrab: function(ev) {
+    requestGrab: function requestGrab(ev) {
     
         Net.send('cmd', ['grab', parseInt($(ev.target).closest('.item').attr('data-id'))]);
     
+        ev.preventDefault();
+        ev.stopPropagation();
+        return false;
+    
     }, 
     
-    requestEquip: function(ev) {
+    requestEquip: function requestEquip(ev) {
     
         Net.send('cmd', ['equip', parseInt($(ev.target).closest('.item').attr('data-id'))]);
+        
+        ev.preventDefault();
+        ev.stopPropagation();
+        return false;
     
     },
     
+    requestUnequip: function requestUnequip(ev) {
+    
+        Net.send('cmd', ['unequip', parseInt($(ev.target).closest('.item').attr('data-id'))]);
+        
+        ev.preventDefault();
+        ev.stopPropagation();
+        return false;
+    
+    }, 
+    
     requestPlace: function(spaceKey, row, col) {
     
-        Net.send('cmd', ['place', spaceKey, row, col]);    
+        Net.send('cmd', ['place', spaceKey, row, col]);  
     
     },  
     
@@ -315,26 +369,40 @@ var UI = {
     
     }, 
     
-    addToSpace: function(space, eItem, pos, leftClick, rightClick) {
+    setMouseActions: function(e, leftClick, rightClick) {
     
-        UI.setSpacePosition(eItem, pos[1], pos[0]);
-        UI.setSpaceDimensions(eItem, eItem.get(0).item);
+        var tooltipActions = e.get(0).tooltip.find('.actions');
+    
+        // first we unbind existing click/right-click events
+        e.unbind('click').unbind('contextmenu');
         
-        eItem.unbind('click').unbind('contextmenu');
+        // secondly we remove the corresponding tooltip information
+        tooltipActions.html('');
         
         if (leftClick) {
         
-            eItem.click(leftClick);
+            e.click(leftClick);
+            tooltipActions.html('<span>LEFT: ' + UI.label(leftClick.name) + '</span>');            
         
         }
         
         if (rightClick) {
         
-            eItem.bind('contextmenu', rightClick);
+            e.bind('contextmenu', rightClick);
+            tooltipActions.append('<span>RIGHT: ' + UI.label(rightClick.name) + '</span>');    
         
         }
         
-        space.append(eItem);        
+        return e;
+    
+    }, 
+    
+    addToSpace: function(space, eItem, pos) {
+    
+        UI.setSpacePosition(eItem, pos[1], pos[0]);
+        UI.setSpaceDimensions(eItem, eItem.get(0).item);
+        
+        UI.currentScreen.find('.window .space.' + space).append(eItem);        
     
     }, 
     
@@ -759,7 +827,7 @@ var UI = {
         
         _.each(affixList, function(i) {
         
-            s += Core.Settings.labels[i[0]].replace('#', i[1]).replace(/\{(.*)\}/, '<small class="white">$1</small>');
+            s += UI.label(i[0]).replace('#', i[1]).replace(/\{(.*)\}/, '<small class="white">$1</small>');
         
         });
         
@@ -791,13 +859,21 @@ var UI = {
     
     },
     
+    endDragging: function() {
+    
+        UI.eDragged.css('top', '0').css('left', '0');
+        UI.eDragged = null;
+        UI.currentScreen.removeClass('dragging');        
+    
+    }, 
+    
     place: function(params) {
 
         if (UI.eDragged) {
       
-            UI.addToSpace(UI.currentScreen.find('.window .' + params[0]), UI.eDragged.detach(), [params[2], params[1]], UI.requestGrab, UI.requestEquip);
-            UI.eDragged = null;
-            UI.currentScreen.removeClass('dragging');    
+            UI.placeItemInInventory(UI.eDragged.detach(), [params[2], params[1]]);
+      
+            UI.endDragging();
         
         } else {
         
@@ -806,6 +882,39 @@ var UI = {
         }
     
     },  
+    
+    placeItemInInventory: function(eItem, pos) {
+    
+        UI.setMouseActions(eItem, UI.requestGrab, UI.requestEquip);
+    
+        UI.addToSpace('inventory', eItem, pos);
+    
+    }, 
+    
+    placeItemInSlot: function(eItem, slot) {
+    
+        UI.setMouseActions(eItem, UI.requestGrab, UI.requestUnequip);
+
+        UI.currentScreen.find('.window .equipment .slot[data-slot="' + slot + '"]').append(eItem);
+    
+    }, 
+    
+    equip: function(params) {
+
+        if (UI.eDragged) {
+
+            UI.placeItemInSlot(UI.eDragged.detach(), params[1]);
+        
+            UI.endDragging();    
+        
+        } else {
+        
+            UI.grab(params[0]);
+            UI.equip(params);
+        
+        }
+    
+    }, 
     
     resizeHilites: function() {
     
@@ -936,6 +1045,10 @@ var UI = {
             }
         
         }
+        
+        // add a container to display any mouse actions currently bound to 
+        // the item
+        e.append('<div class="actions"></div>');
         
         return e;
     

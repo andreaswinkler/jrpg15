@@ -265,7 +265,8 @@
                 e.c.dex = e.dex;
                 e.c.int = e.int;
                 e.c.str = e.str;
-                
+                e.c.armor = 0;
+
                 e.c.life = (e.c.life || 0) + (e.c.vit * 5);
                 e.c.mana = (e.c.mana || 0) + (e.c.int * 2.5);
             
@@ -278,13 +279,21 @@
             
                 _.each(e.equipment, function(i) {
                 
-                    _.each(i[2], function(v, k) {
+                    _.each(i[2].c, function(v, k) {
                         
                         e.c[k] = (e.c[k] || 0) + v;
                     
                     });
                 
                 });
+            
+            }
+            
+            if (e.is(F.HERO)) {
+            
+                // todo: this should be something meaningful
+                e.c.toughness = e.c.life + e.c.armor;
+                e.c.healing = e.c.lps + e.c.mps;
             
             }           
         

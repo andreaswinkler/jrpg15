@@ -34,8 +34,10 @@ ul li.online { color: #00c100; }
 .item { width: 40px; height: 40px; z-index: 10000; display: block; background: #c10000; position: relative; }
 
 .inventory { width: 30%; height: 100%; background: #000; border: 1px solid #fff; display: block; position: absolute; right: 0; top: 0; }
-.inventory .stats { width: 250px; height: 600px; background: #111; border: 1px solid #fff; }
-.inventory .equipment { background: #222; border: 1px solid #fff; position: absolute; height: 600px; right: 0; top: 12px; width: 600px; }
+.inventory .stats { width: 150px; height: 600px; background: #111; border: 1px solid #fff; font-size: 16px; color: rgb(169, 152, 119); }
+.inventory .stats .stat label { width: 80px; display: block; clear: both; float: left; padding: 2px 5px; }
+.inventory .stats .stat .value { float: right; padding: 2px 5px; }
+.inventory .equipment { background: #222; border: 1px solid #fff; position: absolute; height: 600px; right: 0; top: 12px; width: 400px; }
 .inventory .equipment .slot { position: absolute; width: 60px; height: 60px; display: block; background: #ddd; }
 .inventory .equipment .headpiece { left: 270px; top: 10px; }
 .inventory .inventory { width: 100%; height: 600px; 
@@ -48,3 +50,5 @@ background-image:repeating-linear-gradient(0deg, #fff, #fff 1px, transparent 1px
 .inventory .inventory .item { position: relative; width: 40px; height: 40px; background: #c10000; }
 .dragging .tooltip { display: none; }
 .item .item-stack { position: absolute; right: 0; bottom: 0; display: block; text-align: center; font-size: 15px; padding: 2px 4px; }
+
+.gold { color: rgb(169, 152, 119); }

@@ -1,3 +1,6 @@
+2014-04-10/2
+UI equip/unequip
+
 2014-04-08/3
 UI pick/drag/place item
 Stack display

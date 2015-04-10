@@ -90,7 +90,19 @@
         "str": "{+#} Strength", 
         "int": "{+#} Intelligence", 
         "dex": "{+#} Dexterity", 
-        "vit": "{+#} Vitality"
+        "vit": "{+#} Vitality",
+        "stat_str": "Strength", 
+        "stat_vit": "Vitality", 
+        "stat_int": "Intelligence", 
+        "stat_dex": "Dexterity", 
+        "stat_toughness": "Toughness", 
+        "stat_dps": "DPS", 
+        "stat_healing": "Healing", 
+        "stat_gold": "Gold", 
+        "stat_armor": "Armor",
+        "requestEquip": "equip", 
+        "requestUnequip": "unequip", 
+        "requestGrab": "grab"
     },
     "settings": {
         "healthpotion_restore_percent": 60,
