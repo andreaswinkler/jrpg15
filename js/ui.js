@@ -22,7 +22,7 @@ var UI = {
     eDragged: null,  
 
     // the current inventory tile size in pixels
-    spaceCellSize: 40,  
+    spaceCellSize: 60,  
 
     // initialize the UI by passing a parent DOM element (e.g. body)
     init: function() {
@@ -96,14 +96,22 @@ var UI = {
                 // position are available
                 if (e.closest('.space').length > 0) {
                     
-                    var startPos = UI.spacePosition(e.closest('.space')), 
-                        available = UI.spaceCellsAvailable(
-                            startPos[0], 
-                            startPos[1],
-                            UI.eDragged.get(0).item[2].spaceWidth || 1, 
-                            UI.eDragged.get(0).item[2].spaceHeight || 1
-                        ), 
-                        eHilite = e.find('.hilite');
+                    var space = e.closest('.space'),
+                        spaceKey = space.attr('data-spacekey'),  
+                        startPos = UI.spacePosition(space), 
+                        eHilite = e.find('.hilite'), 
+                        itemSpaceWidth = UI.eDragged.get(0).item[2].spaceWidth || 1, 
+                        itemSpaceHeight = UI.eDragged.get(0).item[2].spaceHeight || 1,
+                        spaceHeight = Core.Settings.settings[spaceKey + '_dimensions'][0],  
+                        available;
+
+                    if (startPos[0] >= spaceHeight - 1) {
+                    
+                        startPos[0] -= 1;    
+                    
+                    }
+
+                    available = UI.spaceCellsAvailable(F[spaceKey.toUpperCase()], startPos[0], startPos[1], itemSpaceWidth, itemSpaceHeight); 
                     
                     if (available) {
                     
@@ -125,11 +133,11 @@ var UI = {
     
     },
     
-    spaceCellsAvailable: function(space, row, col, w, h) {
+    spaceCellsAvailable: function(spaceFlag, row, col, w, h) {
     
-        return _.find(Utils.itemsByLocation(Lobby.user, space), function(i) {
+        return _.find(Utils.itemsByLocation(Lobby.user, spaceFlag), function(i) {
         
-            return i[4][1][0] >= col && i[4][1][0] <= col + w && i[4][1][1] >= row && i[4][1][1] <= row + h;
+            return Utils.rectHitTest([i[4][1][1], i[4][1][0], i[2].spaceWidth || 1, i[2].spaceHeight || 1], [row, col, w, h]);
         
         }) === undefined;
     
@@ -170,7 +178,9 @@ var UI = {
             if (!UI.exists('inventory')) {
             
                 UI.createInventory();
-                UI.createStatDetails();    
+                UI.createStatDetails();   
+                
+                UI.resize(); 
             
             } 
             
@@ -315,8 +325,8 @@ var UI = {
     
     spacePosition: function(space) {
     
-        var offset = space.offset();
-
+        var offset = space.offset(); 
+        
         return [~~((UI.mouse.y - offset.top) / UI.spaceCellSize), ~~((UI.mouse.x - offset.left) / UI.spaceCellSize)];
     
     }, 
@@ -358,7 +368,7 @@ var UI = {
     },  
     
     setSpacePosition: function(e, row, col) {
-    
+
         e.css('left', (col * UI.spaceCellSize) + 'px').css('top', (row * UI.spaceCellSize) + 'px');
     
     }, 
@@ -382,14 +392,14 @@ var UI = {
         if (leftClick) {
         
             e.click(leftClick);
-            tooltipActions.html('<span>LEFT: ' + UI.label(leftClick.name) + '</span>');            
+            tooltipActions.html('<span class="mouse-left">' + UI.label(leftClick.name) + '</span>');            
         
         }
         
         if (rightClick) {
         
             e.bind('contextmenu', rightClick);
-            tooltipActions.append('<span>RIGHT: ' + UI.label(rightClick.name) + '</span>');    
+            tooltipActions.append('<span class="mouse-right">' + UI.label(rightClick.name) + '</span>');    
         
         }
         
@@ -401,8 +411,8 @@ var UI = {
     
         UI.setSpacePosition(eItem, pos[1], pos[0]);
         UI.setSpaceDimensions(eItem, eItem.get(0).item);
-        
-        UI.currentScreen.find('.window .space.' + space).append(eItem);        
+
+        UI.currentScreen.find('.window .space.' + space).append(eItem);       
     
     }, 
     
@@ -556,7 +566,10 @@ var UI = {
         
         e.mouseenter(function(ev) {
         
-            this.tooltip.appendTo(this);
+            var e = $(this), 
+                marginTop = Math.min(e.outerHeight() + this.tooltip.outerHeight(), e.offset().top);
+        
+            this.tooltip.appendTo(this).css('margin-top', '-' + marginTop + 'px').css('margin-left', '-' + (this.tooltip.outerWidth()) + 'px');
         
         }).mouseleave(function(ev) {
             
@@ -845,11 +858,12 @@ var UI = {
     }, 
     
     // grab an item (put from a space to the hand)
-    grab: function(itemId) {
+    grab: function(params) {
     
         UI.currentScreen.addClass('dragging');
     
-        UI.eDragged = UI.currentScreen.find('.item[data-id="' + itemId + '"]');
+        UI.eDragged = UI.currentScreen.find('.item[data-id="' + params[0] + '"]');
+        UI.eDragged.get(0).item[4] = params[1];
         
         UI.eDragged.detach().appendTo(UI.currentScreen).unbind('click').unbind('contextmenu');
         
@@ -861,7 +875,6 @@ var UI = {
     
     endDragging: function() {
     
-        UI.eDragged.css('top', '0').css('left', '0');
         UI.eDragged = null;
         UI.currentScreen.removeClass('dragging');        
     
@@ -871,7 +884,8 @@ var UI = {
 
         if (UI.eDragged) {
       
-            UI.placeItemInInventory(UI.eDragged.detach(), [params[2], params[1]]);
+            UI.eDragged.get(0).item[4] = params[1];
+            UI.placeItemInInventory(UI.eDragged.detach(), [params[1][1][1], params[1][1][0]]);
       
             UI.endDragging();
         
@@ -989,7 +1003,8 @@ var UI = {
     itemTooltip: function(container, item) {
     
         var isEquipped = Utils.is(item, F.EQUIPPED), 
-            e = UI.window('tooltip item-tooltip', container, Utils.name(item)), 
+            w = UI.window('tooltip item-tooltip', container, Utils.name(item)),
+            e = w.find('.window-content'),  
             affixes;
         
         e.append('<div class="item-image-container" style="' + Assets.rankBackground(item) + '"><div class="item-image" style="' + Assets.background(item[2].asset) + '"></div></div>');
@@ -1000,11 +1015,11 @@ var UI = {
         
         if (Utils.is(item, F.ARMOR)) {
         
-            e.append('<div class="item-mainstat">' + item[2].c.armor + '<small>Armor</small></div>');
+            e.append('<div class="item-mainstat">' + item[2].c.armor + '<br /><small>Armor</small></div>');
         
         } else if (Utils.is(item, F.WEAPON)) {
         
-            e.append('<div class="item-mainstat">' + item[2].c.dps.toFixed(1) + '<small>Damage per second</small><br /><small class="white">' + item[2].c.minDmg.toFixed(1) + '</small><small>-</small><small class="white">' + item[2].c.maxDmg.toFixed(1) + '</small><small>Damage</small><br /><small class="white">' + (item[2].c.as).toFixed(2) + '</small><small>Attacks per Second</small></div>');
+            e.append('<div class="item-mainstat">' + item[2].c.dps.toFixed(1) + '<br /><small>Damage per second</small><br /><small class="white">' + item[2].c.minDmg.toFixed(1) + '</small><small>-</small><small class="white">' + item[2].c.maxDmg.toFixed(1) + '</small><small> Damage</small><br /><small class="white">' + (item[2].c.as).toFixed(2) + '</small><small> Attacks per Second</small></div>');
         
         }
         
@@ -1032,25 +1047,35 @@ var UI = {
         
         e.append('<div class="item-level-requirement"><small>Required Level: </small><small class="white">' + item[2].c.levelReq + '</small></div>');
         
+        additionalInfo = $('<div class="item-additional-info"></div>');
+        
+        if (item[2].sellValue) {
+        
+            additionalInfo.append('<div class="item-sell-value">' + item[2].sellValue + '</div>');    
+        
+        }
+        
         if (item[2].c.durability) {
         
             if (Utils.is(item, F.INDESTRUCTIBLE)) {
             
-                e.append('<div class="item-durability indestructible">Indestructible</div>');
+                additionalInfo.append('<div class="item-durability indestructible">Indestructible</div>');
             
             } else {
         
-                e.append('<div class="item-durability"><small>Durability: </small><small class="white">' + item[2].c.durability + '</small><small>/</small><small>' + item[2].durability + '</small></div>');
+                additionalInfo.append('<div class="item-durability"><small>Durability: </small><small class="white">' + item[2].c.durability + '</small><small>/</small><small>' + item[2].durability + '</small></div>');
             
             }
         
         }
         
+        e.append(additionalInfo);
+        
         // add a container to display any mouse actions currently bound to 
         // the item
         e.append('<div class="actions"></div>');
         
-        return e;
+        return w;
     
     }
 

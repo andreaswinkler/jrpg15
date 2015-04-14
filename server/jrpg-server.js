@@ -921,15 +921,6 @@
         
         },
         
-        // change the location of an item by passing in a location flag
-        // optionally a more detailed information can be provided to indicate 
-        // e.g. an equipment slot, a grid position or global map coordinates
-        changeItemLocation: function(item, location, detail) {
-        
-            item[4] = [location, detail];
-        
-        }, 
-        
         // put an item from anywhere (must belong to the player) into 
         // the players hand 
         grab: function(socket, itemId) {
@@ -981,7 +972,9 @@
   
                 this.addItemToGrid(socket.player.spaces[spaceKey][3], item, row, col);
             
-            }    
+            } 
+            
+            return item;   
         
         },                                              
         
@@ -1037,6 +1030,15 @@
                 socket.player.hero.equipment.push(item);  
             
             }    
+        
+        }, 
+        
+        // change the location of an item by passing in a location flag
+        // optionally a more detailed information can be provided to indicate 
+        // e.g. an equipment slot, a grid position or global map coordinates
+        changeItemLocation: function(item, location, detail) {
+        
+            item[4] = [location, detail];
         
         }, 
         

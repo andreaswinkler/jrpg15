@@ -52,7 +52,7 @@ io.sockets.on('connection', function(socket) {
             
                 js.grab(socket, d[1]);
                 
-                socket.emit('grab', d[1]);
+                socket.emit('grab', [d[1], js.item(socket.player, d[1])[4]]);
             
                 break;
         
@@ -102,9 +102,10 @@ io.sockets.on('connection', function(socket) {
                 
             case 'place':
             
-                js.place(socket, d[1], d[2], d[3]);
-                
-                socket.emit('place', [d[1], d[2], d[3]]);
+                var item = js.place(socket, d[1], d[2], d[3]);
+                item[4][1] = [d[2], d[3]];
+
+                socket.emit('place', [item[0], item[4]]);
                 
                 break;    
                 

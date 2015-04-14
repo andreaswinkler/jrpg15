@@ -42,7 +42,7 @@
             "Small Sword", 1, 10, 1, 
             ["weapon", "onehand", "sword", "item", "smallsword"], 
             "A butter knife.", 
-            { "minDmg": 1, "maxDmg": 3, "as": 1.2, "durability": 10, "asset": ["swords.png", 0, 0] },
+            { "minDmg": 1, "maxDmg": 3, "as": 1.2, "durability": 10, "asset": ["swords.png", 0, 0], "spaceWidth": 1, "spaceHeight": 2 },
             { "sockets": [0, 3] } 
         ]
     ],
@@ -107,7 +107,7 @@
     "settings": {
         "healthpotion_restore_percent": 60,
         "healthpotion_cooldown_duration_seconds": 120,
-        "inventory_dimensions": [12, 16], 
+        "inventory_dimensions": [6, 10], 
         "stash_dimensions": [20, 16]
     }, 
     "assets": {
