@@ -48,6 +48,7 @@ io.sockets.on('connection', function(socket) {
     
         switch (d[0]) {
         
+            // id
             case 'grab':
             
                 js.grab(socket, d[1]);
@@ -56,21 +57,21 @@ io.sockets.on('connection', function(socket) {
             
                 break;
         
+            // id
             case 'unequip':
             
                 js.unequip(socket, d[1], true);
-                
-                socket.emit('grab', d[1]);
-                
-                socket.emit('place', [d[1]].concat(js.item(socket.player, d[1])[4][1]));
+
+                socket.emit('place', [d[1], js.item(socket.player, d[1])[4]]);
                 
                 break;
             
+            // id, slotHint
             case 'equip':
             
                 js.equip(socket, d[1], d[2]);
                 
-                socket.emit('equip', [d[1], js.item(socket.player, d[1])[4][1]]);
+                socket.emit('equip', [d[1], js.item(socket.player, d[1])[4]]);
                 
                 break;
             
@@ -99,7 +100,8 @@ io.sockets.on('connection', function(socket) {
                 js.drop(socket);
             
                 break;
-                
+            
+            // [id, row, col]    
             case 'place':
             
                 var item = js.place(socket, d[1], d[2], d[3]);

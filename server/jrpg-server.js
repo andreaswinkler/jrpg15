@@ -1016,7 +1016,7 @@
                 slot;
 
             if (item && [F.HAND, F.INVENTORY].indexOf(item[4][0]) != -1) {
-            
+
                 if (item[4][0] == F.INVENTORY) {
                 
                     this.grab(socket, itemId);
@@ -1024,7 +1024,7 @@
                 } 
                 
                 slot = Utils.slot(item, slotHint); 
-                
+
                 this.changeItemLocation(item, F.EQUIPMENT, slot); 
                 
                 socket.player.hero.equipment.push(item);  

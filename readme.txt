@@ -1,3 +1,6 @@
+2015-04-15/2
+Inventory equip/unequip
+
 2015-04-14/2
 Inventory place/move
 Item Tooltips

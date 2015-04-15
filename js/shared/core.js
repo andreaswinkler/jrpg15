@@ -895,9 +895,7 @@
 
             }, 
             
-            // return the slot for a given item
-            // slot hint is used to indicate e.g. weapon2, token3 or ring2
-            slot: function(item, slotHint) {
+            slotOptions: function(item) {
             
                 var a = [
                         [F.WEAPON, [F.WEAPON1, F.WEAPON2]], 
@@ -913,33 +911,59 @@
                         [F.BRACERS], 
                         [F.SHOULDERS] 
                     ], 
-                    slot, i;
+                    i;
                 
                 for (i = 0; i < a.length; i++) {
                 
                     if (this.is(item, a[i][0])) {
                     
-                        if (a[i].length == 1) {
-                        
-                            return a[i][0];
-                        
-                        } else {
-                    
-                            if (a[i][1].indexOf(slotHint) != -1) {
-                            
-                                return slotHint;
-                            
-                            } else {
-                            
-                                return a[i][0];
-                            
-                            }
-                        
-                        }
+                        return a[i];
                     
                     }
                 
+                } 
+                
+                return null;   
+            
+            }, 
+            
+            // return the slot for a given item
+            // slot hint is used to indicate e.g. weapon2, token3 or ring2
+            slot: function(item, slotHint) {
+            
+                var slotOptions = this.slotOptions(item);
+                
+                if (slotOptions != null) {
+                
+                    if (slotOptions.length == 1) {
+                    
+                        return slotOptions[0];
+                    
+                    } else {
+                    
+                        if (slotHint && slotOptions[1].indexOf(slotHint) != -1) {
+                        
+                            return slotHint;
+                        
+                        } else {
+                        
+                            return slotOptions[1][0];
+                        
+                        }
+                    
+                    }  
+                
                 }
+                
+                return null;
+            
+            }, 
+            
+            isSlotValid: function(item, slot) {
+
+                var slotOptions = this.slotOptions(item);
+
+                return slotOptions != null && ((slotOptions.length == 1 && slotOptions[0] == slot) || (slotOptions.length == 2 && slotOptions[1].indexOf(slot) != -1));    
             
             }, 
             
@@ -1021,7 +1045,7 @@
             },
             
             rectHitTest: function(r1, r2) {
-                console.log(r1, r2);
+
                 return !(r1[0] < r2[0] + r2[2] || r1[0] + r1[2] > r2[0] || r1[1] < r2[1] + r2[3] || r1[1] + r1[3] > r2[1]);  
             
             }

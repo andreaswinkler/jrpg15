@@ -268,17 +268,7 @@ var UI = {
         
             var e = $('<div class="slot ' + slot + '" data-slot="' + slot + '"></div>');
             
-            e.click(function(ev) {
-            
-                var e = $(ev.target).closest('.slot');
-            
-                if (UI.eDragged) {
-                
-                    Net.send('cmd', ['equip', parseInt(UI.eDragged.attr('data-id')), e.attr('data-slot')]);
-                
-                }
-            
-            });
+            e.click(UI.requestEquip);
             
             equipment.append(e);
         
@@ -335,29 +325,48 @@ var UI = {
     
         Net.send('cmd', ['grab', parseInt($(ev.target).closest('.item').attr('data-id'))]);
     
-        ev.preventDefault();
-        ev.stopPropagation();
-        return false;
+        return UI.stopEvent(ev);
     
     }, 
     
     requestEquip: function requestEquip(ev) {
     
-        Net.send('cmd', ['equip', parseInt($(ev.target).closest('.item').attr('data-id'))]);
+        var e = $(ev.target), 
+            slot = e.closest('.slot'), 
+            itemId = parseInt(UI.eDragged ? UI.eDragged.get(0).item[0] : e.closest('.item').attr('data-id'));
         
-        ev.preventDefault();
-        ev.stopPropagation();
-        return false;
+        // in case we try to place an item in an equipment slot we need to 
+        // make sure this is allowed
+        if (UI.eDragged && !Utils.isSlotValid(UI.eDragged.get(0).item, F[slot.attr('data-slot').toUpperCase()])) {
+        
+            Sound.play('ui.invalid');
+        
+            return UI.stopEvent(ev);    
+        
+        } else {
+    
+            Net.send('cmd', ['equip', itemId]);
+            
+            return UI.stopEvent(ev);
+
+        }
     
     },
+    
+    stopEvent: function(ev) {
+    
+        ev.preventDefault();
+        ev.stopPropagation();
+        
+        return false;
+    
+    }, 
     
     requestUnequip: function requestUnequip(ev) {
     
         Net.send('cmd', ['unequip', parseInt($(ev.target).closest('.item').attr('data-id'))]);
         
-        ev.preventDefault();
-        ev.stopPropagation();
-        return false;
+        return UI.stopEvent(ev);
     
     }, 
     
@@ -891,7 +900,8 @@ var UI = {
         
         } else {
         
-            console.warn('<place> cmd received when no item in hand.');
+            UI.grab(params);
+            UI.place(params);
         
         }
     
@@ -906,25 +916,42 @@ var UI = {
     }, 
     
     placeItemInSlot: function(eItem, slot) {
-    
+       
         UI.setMouseActions(eItem, UI.requestGrab, UI.requestUnequip);
+
+        eItem.css('top', '0px').css('left', '0px');
 
         UI.currentScreen.find('.window .equipment .slot[data-slot="' + slot + '"]').append(eItem);
     
     }, 
     
+    // we got informed by the server that we should equip an item 
+    // this can be either in hand or in the inventory in which case we 
+    // first need to put it in hand
     equip: function(params) {
 
-        if (UI.eDragged) {
+        if (params[1][1] != null) {
 
-            UI.placeItemInSlot(UI.eDragged.detach(), params[1]);
-        
-            UI.endDragging();    
+            if (UI.eDragged) {
+    
+                // we set the location of the item to the new one (equipment, slot)
+                UI.eDragged.get(0).item[4] = params[1];
+    
+                // we place the item into the slot
+                UI.placeItemInSlot(UI.eDragged.detach(), K[params[1][1]].toLowerCase());
+            
+                UI.endDragging();    
+            
+            } else {
+            
+                UI.grab(params);
+                UI.equip(params);
+            
+            }
         
         } else {
         
-            UI.grab(params[0]);
-            UI.equip(params);
+            Sound.play('ui.invalid');
         
         }
     
