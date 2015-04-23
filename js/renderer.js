@@ -46,7 +46,7 @@ var Renderer = {
     
         Renderer.container = container;
         Renderer.minimapContainer = minimapContainer;
-    
+        
         // let's set all our size attributes based on the 
         // given container
         Renderer.resize();
@@ -70,11 +70,11 @@ var Renderer = {
     // resize the whole game screen and all its layers and re-calculate
     // all size attributes 
     resize: function() {
-    
+        
         // get the current dimenstions from the parent element
         var width = Renderer.container.width(), 
             height = Renderer.container.height();
-    
+        
         Renderer.width = width;
         Renderer.height = height;
         Renderer.halfWidth = width / 2;

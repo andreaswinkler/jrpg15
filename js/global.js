@@ -23,17 +23,11 @@ function _center() {
 
 $(document).ready(function(ev) {
 
-    $(window).resize(function(ev) {
-    
-        _center();
-    
-    });
+    $(window).resize(_center).trigger('resize');
 
-    $(window).trigger('resize');
-    
     if (typeof(Lobby) !== 'undefined') {
     
-        Lobby.init($('body'), function() {
+        Lobby.init($('#jrpg15'), function() {
         
             Net.send('login', { playername: '1983', password: '' }, function(data) {
             
