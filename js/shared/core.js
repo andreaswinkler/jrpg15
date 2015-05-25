@@ -267,8 +267,8 @@
                 e.c.str = e.str;
                 e.c.armor = 0;
 
-                e.c.life = (e.c.life || 0) + (e.c.vit * 5);
-                e.c.mana = (e.c.mana || 0) + (e.c.int * 2.5);
+                e.life = e.c.life = e.c.vit * 5;
+                e.mana = e.c.mana = e.c.int * 2.5;
             
                 e.c.lps = Math.floor(e.c.vit / 10);
                 e.c.mps = Math.floor(e.c.int / 10);

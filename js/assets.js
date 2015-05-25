@@ -7,7 +7,7 @@ var Assets = {
     // they should be accessed via the get(assetId) method
     store: {}, 
     
-    // the quality attribute defines which from which folder we load 
+    // the quality attribute defines from which folder we load 
     // the assets
     // possible values are low, medium and high
     // the setting should only be set on startup

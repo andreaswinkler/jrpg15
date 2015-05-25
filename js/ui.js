@@ -145,10 +145,17 @@ var UI = {
     
     update: function() {
     
+        UI.updateGlobe('life', Game.hero.c.life, Game.hero.life);
+        UI.updateGlobe('mana', Game.hero.c.mana, Game.hero.mana);
+    
         $('#globe_life .value').html(Game.hero.c.life);
     
-        //this.updateElement('life', Game.hero.life_c, Game.hero.life); 
-        //this.updateElement('mana', Game.hero.mana_c, Game.hero.mana); 
+    }, 
+    
+    updateGlobe: function(key, current, total) {
+    
+        UI.elements[key].value.html(current);
+        UI.elements[key].current.css('height', ((current / total) * 100) + '%');
     
     }, 
     
@@ -539,7 +546,14 @@ var UI = {
     
     initGlobe: function(key) {
     
-        return $('<div id="globe_' + key + '" class="globe"><div class="current"></div><span class="value" /></div>');
+        var e = $('<div id="globe_' + key + '" class="globe"><div class="current"></div><span class="value" /></div>');
+        
+        UI.elements[key] = { 
+            value: e.find('.value'), 
+            current: e.find('.current')
+        };
+        
+        return e;
     
     },
     
@@ -564,6 +578,8 @@ var UI = {
             e.click(callback);
         
         }
+        
+        UI.elements[key] = e;
         
         return e;
     
@@ -620,15 +636,15 @@ var UI = {
         
         controlsContainer.append(mainControlsContainer);              
         
-        this.elements.life = UI.initGlobe('life').appendTo(mainControlsContainer);
+        UI.initGlobe('life').appendTo(mainControlsContainer);
         this.elements.xp = UI.progressBar('xp').appendTo(mainControlsContainer); 
-        this.elements.skill1 = UI.initField('skill2', null, UI.onFieldClick, 'Locked Skill [1]').appendTo(mainControlsContainer);
-        this.elements.skill1 = UI.initField('skill3', null, UI.onFieldClick, 'Locked Skill [2]').appendTo(mainControlsContainer);
-        this.elements.skill1 = UI.initField('skill4', null, UI.onFieldClick, 'Locked Skill [3]').appendTo(mainControlsContainer);
-        this.elements.skill1 = UI.initField('skill5', null, UI.onFieldClick, 'Locked Skill [4]').appendTo(mainControlsContainer);
-        this.elements.skill1 = UI.initField('skill0', null, UI.onFieldClick, 'Locked Skill (left click)').appendTo(mainControlsContainer);
-        this.elements.skill1 = UI.initField('skill1', null, UI.onFieldClick, 'Locked Skill (right click)').appendTo(mainControlsContainer);
-        this.elements.mana = UI.initGlobe('mana').appendTo(mainControlsContainer);
+        UI.initField('skill2', null, UI.onFieldClick, 'Locked Skill [1]').appendTo(mainControlsContainer);
+        UI.initField('skill3', null, UI.onFieldClick, 'Locked Skill [2]').appendTo(mainControlsContainer);
+        UI.initField('skill4', null, UI.onFieldClick, 'Locked Skill [3]').appendTo(mainControlsContainer);
+        UI.initField('skill5', null, UI.onFieldClick, 'Locked Skill [4]').appendTo(mainControlsContainer);
+        UI.initField('skill0', null, UI.onFieldClick, 'Locked Skill (left click)').appendTo(mainControlsContainer);
+        UI.initField('skill1', null, UI.onFieldClick, 'Locked Skill (right click)').appendTo(mainControlsContainer);
+        UI.initGlobe('mana').appendTo(mainControlsContainer);
         
         Renderer.init(gameContainer, minimapContainer);
         
