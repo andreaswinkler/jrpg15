@@ -578,7 +578,7 @@ var UI = {
             var e = $(this), 
                 marginTop = Math.min(e.outerHeight() + this.tooltip.outerHeight(), e.offset().top);
         
-            this.tooltip.appendTo(this).css('margin-top', '-' + marginTop + 'px').css('margin-left', '-' + (this.tooltip.outerWidth()) + 'px');
+            this.tooltip.appendTo(this).addClass('active').css('margin-top', '-' + marginTop + 'px').css('margin-left', '-' + (this.tooltip.outerWidth()) + 'px');
         
         }).mouseleave(function(ev) {
             
