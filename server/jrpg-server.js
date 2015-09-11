@@ -9,6 +9,16 @@
             var _ = require('../js/underscore.min.js');
             var fs = require('fs');
             var Core = require('../js/shared/core.js');
+            var db = require('mongoose');
+            var Game = db.model('Game', { 
+                isPublic: Boolean, 
+                duration: Number, 
+                tsCreated: Number, 
+                tsClosed: Number, 
+                isClosed: Boolean
+            });  
+            
+            db.connect('mongodb://localhost');
         
         } else if (this._) {
             
@@ -46,15 +56,13 @@
         
         // the debug socket, if connected
         debug: null,
-        
-        // incrementing number used for game ids
-        gamesSequenceNo: 0, 
-        
-        // auto-increment id
+
+        // a non persistent unique id counter
         _id: 0, 
         
         // get a new id
-        // TODO: change this to a persistent one
+        // use this only for temporary elements (e.g. projectiles)
+        // the id is not persisted
         id: function() {
         
             return ++this._id;
@@ -91,7 +99,7 @@
         
         // get a random blueprint based on the item type and source level
         randomBlueprint: function(itemType, level) {
-        
+            
             return Utils.randomP(_.filter(Core.Settings.blueprints, function(i) {
             
                 return i[1] <= level && i[2] >= level && i[4].indexOf(itemType) != -1;
@@ -100,8 +108,9 @@
         
         }, 
         
+        // create a specific item by providing a blueprint
         createDistinctItem: function(blueprintFlag, level, rank, quality) {
-        
+
             var blueprint = Utils.blueprintBySingleFlag(blueprintFlag), 
                 itemType = Utils.itemTypeByBlueprint(blueprint), 
                 level = level || 1, 
@@ -571,7 +580,11 @@
         
         createGame: function(socket, data) {
         
-            var id = ++this.gamesSequenceNo;
+            var game = new Game({ isPublic: false, duration: 0, tsCreated: +new Date(), tsClosed: null, isClosed: false });
+            game.save(function(err) { console.dir(err); });
+            console.dir(game);                
+        
+            var id = game._id; //++this.gamesSequenceNo;
             
             // add a new game to the list
             this.games.push({ 

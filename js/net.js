@@ -5,8 +5,15 @@ var Net = {
     
     socket: null, 
     
-    onConnect: null,  
-
+    onConnect: null,
+    
+    envelopes: {
+        status: ['players', 'games', 'msAvgServerLoop'], 
+        gameCreate: ['players', 'isPublic', 'isPaused', 'tsStart'], 
+        login: ['_id', 'name', 'hero', 'balance'], 
+        map: ['_id', 'name']
+    },      
+                      
     init: function(success) {
     
         Net.onConnect = success;
@@ -55,19 +62,34 @@ var Net = {
         
         if (success) {
         
-            Net.socket.removeListener(returnMsg || msg, success);
-            Net.socket.on(returnMsg || msg, success);
+            Net.bind(msg, success, returnMsg);
         
         }
-    
+
         Net.socket.emit(msg, data);
     
     }, 
     
-    bind: function(msg, success) {
+    openEnvelope: function(msg, data, msRoundtrip) {
+        
+        console.log('openEnvelope', msg, data, msRoundtrip);
     
-        Net.socket.removeListener(msg, success);    
-        Net.socket.on(msg, success);
+        return _.reduce(data, function(obj, e, ind) { obj[Net.envelopes[msg][ind]] = e; return obj; }, {});
+
+    }, 
+    
+    bind: function(msg, success, returnMsg) {
+    
+        var tsStart = +new Date(), 
+            callback = function(data) {
+            var data = Net.openEnvelope(returnMsg || msg, data, +new Date() - tsStart);
+            success(data);        
+        
+        };
+    
+        Net.socket.removeAllListeners(returnMsg || msg);    
+        
+        Net.socket.on(returnMsg || msg, callback);
     
     } 
 

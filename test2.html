@@ -1,0 +1,71 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script type="text/javascript" src="js/underscore.min.js"></script>
+<script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
+<script type="text/javascript" src="js/game.js"></script>
+<script type="text/javascript" src="js/shared/core.js"></script>
+<script type="text/javascript" src="js/particle.js"></script>
+<script type="text/javascript" src="js/assets.js"></script>
+<script type="text/javascript" src="js/net.js"></script>
+<script type="text/javascript" src="js/ui.js"></script>
+<script type="text/javascript" src="js/renderer.js"></script>
+<script type="text/javascript" src="js/lobby.js"></script>
+<script type="text/javascript" src="js/debug.js"></script>
+<script type="text/javascript" src="js/sound.js"></script>
+<script type="text/javascript" src="js/socket.io.min.js"></script>
+<link rel="stylesheet" href="styles.css" />
+<style>
+#info { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: #000; color: #eee; }
+</style>
+</head>
+<body>
+<div id="jrpg15" class="fullscreen"></div>
+<div id="info">
+Latency: <span id="latency"></span>
+Players: <span id="players"></span>
+Games: <span id="games"></span>
+ServerLoopAvg: <span id="serverLoopAvg"></span>
+</div>
+</body>
+<script type="text/javascript">
+
+function _updateLatency() {
+
+    var ts = +new Date();
+    
+    Net.send('status', {}, function(data) {
+        
+        $('#latency').html((+new Date() - ts) + 'ms');
+        
+        $('#players').html(data.players);
+        $('#games').html(data.games + ' (' + _.reduce(data.games, function(num, i) { return num + i.isPublic; }, 0) + ' public)');     
+        $('#serverLoopAvg').html(data.msAvgServerLoop + 'ms');   
+    
+    });    
+
+}
+
+Net.init(function() {
+
+    Net.send('login', { playername: '1983', password: '' }, function(data) { 
+
+        Net.send('gameCreate', { isPublic: false }, function(data) {
+
+        });
+    });
+    
+    _updateLatency();
+    
+    setInterval(_updateLatency, 10000);
+    
+    Net.bind('map', function(data) {
+    
+        console.log('map loaded. show loading screen, load assets, and stuff. after loading inform the server');
+    
+    });
+
+});
+
+</script>
+</html>

@@ -1,5 +1,5 @@
 var app = require('http').createServer(), 
-    io = require('socket.io').listen(app), 
+    io = require('socket.io').listen(app),
     js = require('./jrpg-server.js');
 
 // start listening
