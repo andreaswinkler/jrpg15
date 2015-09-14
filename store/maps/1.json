@@ -1,4 +1,47 @@
 {
     "_id": 1, 
-    "name": "Hystrix Lair"
+    "name": "Hystrix Lair", 
+    "landingPoints": {
+        "entry": {
+            "row": 3, 
+            "col": 3
+        }
+    }, 
+    "spawnPoints": [
+        {
+            "row": 3, 
+            "col": 20, 
+            "spawns": {
+                "type": "hystrix", 
+                "amount": 1
+            }
+        }, 
+        {
+            "row": 10, 
+            "col": 10, 
+            "spawns": {
+                "type": "hystrix", 
+                "amount": 3
+                "isChampion": true
+            }
+        }, 
+        {
+            "row": 20, 
+            "col": 20, 
+            "spawns": {
+                "type": "hystrixQueen", 
+                "amount": 1, 
+                "isUnique": true
+            }
+        }, 
+        {
+            "row": 30, 
+            "col": 20, 
+            "spawns": {
+                "type": "chest", 
+                "amount": 1
+            }
+        }
+    ], 
+    "grid": null
 }

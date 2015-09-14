@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(io, _, Player, Game, Map) {
+module.exports = function(io, _, Player, Game, Map, Env, Entity) {
 
     return {
 
@@ -11,7 +11,7 @@ module.exports = function(io, _, Player, Game, Map) {
 
         // the events the server reacts upon, all others are ignored
         events: ['login', 'logout', 'disconnect', 'status', 'gameCreate', 
-            'gameJoin', 'gameOnload', 'gameLeave', 'cmd'],  
+            'gameJoin', 'mapLoaded', 'gameLeave', 'cmd'],  
 
 // EXTERNALIZED EVENTS /////////////////////////////////////////////////////////
 // methods in this section can be called by the client /////////////////////////
@@ -121,6 +121,28 @@ module.exports = function(io, _, Player, Game, Map) {
         
         }, 
         
+        /* MAPLOADED
+        *  the client informs us that they have loaded the map and 
+        *  have resumed their game loop
+        */
+        mapLoaded: function(event, socket, data) {
+        
+            /*socket._player.hero._c.life = 1;
+        
+            for (var i = 2; i < 1000; i++) {
+            
+                var entity = Entity.createCharacter({ _id: i });
+                entity._map = socket._player._game.maps[0];
+            
+                socket._player._game.maps[0].heroes.push(entity);
+            
+            }*/
+        
+            // activate the game
+            socket._player._game.isPaused = false;
+        
+        },                 
+        
 // PRIVATE SECTION /////////////////////////////////////////////////////////////
 
         // the timestamp of a loop start
@@ -172,6 +194,8 @@ module.exports = function(io, _, Player, Game, Map) {
             // make sure we waited long enough
             if (this.tsLastLoopStart + this.msLoop < this.tsLoopStart) {
             
+                Env.setTicks(this.tsLoopStart - this.tsLastLoopStart);
+                            
                 // remember this (active) loop start timestamp
                 this.tsLastLoopStart = this.tsLoopStart;
             

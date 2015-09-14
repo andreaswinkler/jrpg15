@@ -72,9 +72,9 @@ var Net = {
     
     openEnvelope: function(msg, data, msRoundtrip) {
         
-        console.log('openEnvelope', msg, data, msRoundtrip);
+        //console.log('openEnvelope', msg, msRoundtrip);
     
-        return _.reduce(data, function(obj, e, ind) { obj[Net.envelopes[msg][ind]] = e; return obj; }, {});
+        return Net.envelopes[msg] ? _.reduce(data, function(obj, e, ind) { obj[Net.envelopes[msg][ind]] = e; return obj; }, {}) : data;
 
     }, 
     

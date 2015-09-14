@@ -46,9 +46,13 @@ function _updateLatency() {
 
 }
 
+var entities = {};
+
 Net.init(function() {
 
     Net.send('login', { playername: '1983', password: '' }, function(data) { 
+        console.log(data.hero);
+        entities[data.hero._id] = data.hero;
 
         Net.send('gameCreate', { isPublic: false }, function(data) {
 
@@ -61,7 +65,29 @@ Net.init(function() {
     
     Net.bind('map', function(data) {
     
-        console.log('map loaded. show loading screen, load assets, and stuff. after loading inform the server');
+        console.log('map loaded.', data.name, 'show loading screen, load assets, and stuff. after loading inform the server');
+        
+        console.log(data.name, 'loaded everything');
+        
+        Net.send('mapLoaded');
+    
+    });
+    
+    Net.bind('updates', function(data) {
+    
+        _.each(data, function(value, key) {
+        
+            if (entities[key]) {
+              
+                _.each(value, function(v, k) {
+                
+                    entities[key]._c[k] = v;
+                
+                });
+            
+            }    
+        
+        });
     
     });
 

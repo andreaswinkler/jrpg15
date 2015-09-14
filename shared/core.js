@@ -39,12 +39,5 @@
         return a;
     
     };
-    
-    // the game loop for a map
-    exports.run = function(map, isServer) {
-    
-        
-    
-    };
 
 })(typeof exports === 'undefined' ? this['Core'] = {} : exports);

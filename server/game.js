@@ -88,9 +88,9 @@ module.exports = function(_, Map) {
             if (!game.isPaused) {
             
                 // walk through all maps and pass to the core loop
-                _.each(game.maps, Core.run);
+                _.each(game.maps, Map.run);
                     
-            }        
+            }    
         
         },         
     

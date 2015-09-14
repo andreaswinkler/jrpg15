@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(_, F, Core, Settings, ItemFactory, CharacterFactory) {
+module.exports = function(_, F, Core, Settings, Entity) {
 
     return {
     
@@ -46,7 +46,7 @@ module.exports = function(_, F, Core, Settings, ItemFactory, CharacterFactory) {
                 player = require('./../store/players/' + playername + '.json');
                 
                 // create the hero character from the stored data
-                player.hero = CharacterFactory.create(player.hero);
+                player.hero = Entity.createCharacter(player.hero);
                 
                 // setup stuff when creating a new player
                 // TODO: handle this in the create method

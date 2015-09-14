@@ -6,12 +6,13 @@ var app = require('http').createServer(),
     data = require('./../store/settings.json'),
     flags = require('./../shared/flags.json'), 
     core = require('./../shared/core.js'),
-    itemFactory = require('./itemFactory.js'), 
-    characterFactory = require('./characterFactory.js')(core),
-    map = require('./map.js')(io, underscore), 
-    player = require('./player.js')(underscore, flags, core, data.settings, itemFactory, characterFactory),
+    item = require('./item.js'), 
+    entity = require('./entity.js')(core),
+    env = require('./env.js')(entity), 
+    map = require('./map.js')(io, underscore, env), 
+    player = require('./player.js')(underscore, flags, core, data.settings, entity),
     game = require('./game.js')(underscore, map), 
-    server = require('./server.js')(io, underscore, player, game, map);
+    server = require('./server.js')(io, underscore, player, game, map, env, entity);
     
 // start listening
 app.listen(1337);

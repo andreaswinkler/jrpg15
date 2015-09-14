@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(io, _) {
+module.exports = function(io, _, Env) {
 
     return {
     
@@ -14,6 +14,7 @@ module.exports = function(io, _) {
             var map = require('./../store/maps/' + mapId + '.json');
             
             map.players = [];
+            map.heroes = [];
             
             this.addPlayerToMap(player, map);
             
@@ -33,6 +34,7 @@ module.exports = function(io, _) {
             _.each(maps, function(e, ind, list) {
             
                 e.players = _.without(e.players, player); 
+                e.heroes = _.without(e.heroes, player.hero);
                 
                 // we found the map
                 if (e._id == mapId) {
@@ -59,6 +61,32 @@ module.exports = function(io, _) {
         
         }, 
         
+        // RUN - Server-side Map-level game loop
+        run: function(map) {
+                
+            map.updates = null;
+        
+            _.each(map.heroes, function(hero) {
+            
+                Env.runEntity(hero);
+            
+            });
+            
+            // loop through all creatures
+            // loop through all objects
+            
+            if (map.updates) {
+            
+                _.each(map.players, function(player) {
+                
+                    player._socket.emit('updates', map.updates);
+                
+                });    
+            
+            }
+        
+        }, 
+        
         /* TRANSPORTIZE
         *  prepare map object for transportation via WebSocket
         */ 
@@ -74,8 +102,10 @@ module.exports = function(io, _) {
         addPlayerToMap: function(player, map) {
         
             map.players.push(player);
+            map.heroes.push(player.hero);
             
             player._map = map;
+            player.hero._map = map;
         
         }               
     
