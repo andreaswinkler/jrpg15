@@ -102,5 +102,8 @@
     "DEAD": 100, 
     "HERO": 101, 
     "EQUIPPED": 102, 
-    "INDESTRUCTIBLE": 103
+    "INDESTRUCTIBLE": 103, 
+    "CHEST": 104, 
+    "RADIANTCHEST": 105, 
+    "HYSTRIXQUEEN": 106
 } 

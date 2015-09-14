@@ -126,18 +126,7 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
         *  have resumed their game loop
         */
         mapLoaded: function(event, socket, data) {
-        
-            /*socket._player.hero._c.life = 1;
-        
-            for (var i = 2; i < 1000; i++) {
-            
-                var entity = Entity.createCharacter({ _id: i });
-                entity._map = socket._player._game.maps[0];
-            
-                socket._player._game.maps[0].heroes.push(entity);
-            
-            }*/
-        
+                
             // activate the game
             socket._player._game.isPaused = false;
         

@@ -19,18 +19,23 @@ module.exports = function(Entity) {
         /* RUN
         *  here we handle a full entity (hero, creature)
         */
-        runEntity: function(entity) {
+        runEntity: function(entity, map) {
         
             entity._changes = null;
 
             // life per second 
             if (entity._c.life < entity.life && entity.lifePerSecond > 0) {
             
-                Entity.addLife(entity, entity.lifePerSecond * this.seconds);
+                Entity.changeLife(entity, entity.lifePerSecond * this.seconds);
             
             } 
             
-            Entity.move(entity); 
+            // move
+            if (entity.target) {
+            
+                Entity.move(entity, this.ticks, map.grid); 
+            
+            }
         
         }    
 

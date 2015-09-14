@@ -4,7 +4,6 @@
 <script type="text/javascript" src="js/underscore.min.js"></script>
 <script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
 <script type="text/javascript" src="js/game.js"></script>
-<script type="text/javascript" src="js/shared/core.js"></script>
 <script type="text/javascript" src="js/particle.js"></script>
 <script type="text/javascript" src="js/assets.js"></script>
 <script type="text/javascript" src="js/net.js"></script>
@@ -14,6 +13,7 @@
 <script type="text/javascript" src="js/debug.js"></script>
 <script type="text/javascript" src="js/sound.js"></script>
 <script type="text/javascript" src="js/socket.io.min.js"></script>
+<script type="text/javascript" src="shared/core.js"></script>
 <link rel="stylesheet" href="styles.css" />
 <style>
 #info { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: #000; color: #eee; }
@@ -47,6 +47,7 @@ function _updateLatency() {
 }
 
 var entities = {};
+var map = null;
 
 Net.init(function() {
 
@@ -69,6 +70,8 @@ Net.init(function() {
         
         console.log(data.name, 'loaded everything');
         
+        map = data;
+        
         Net.send('mapLoaded');
     
     });
@@ -77,15 +80,19 @@ Net.init(function() {
     
         _.each(data, function(value, key) {
         
-            if (entities[key]) {
-              
-                _.each(value, function(v, k) {
-                
-                    entities[key]._c[k] = v;
-                
-                });
+            var entity;
+        
+            if (!entities[key]) {
             
-            }    
+                entities[key] = { _id: key };
+            
+            }
+        
+             _.each(value, function(v, k) {
+                
+                Core.deepUpdateProperty(entities[key], k, v);
+            
+            });
         
         });
     

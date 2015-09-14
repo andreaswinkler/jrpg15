@@ -3,42 +3,42 @@
     "name": "Hystrix Lair", 
     "landingPoints": {
         "entry": {
-            "row": 3, 
-            "col": 3
+            "x": 100, 
+            "y": 100
         }
-    }, 
+    },
+    "creatures": [77],
+    "championPacks": 3,   
     "spawnPoints": [
         {
-            "row": 3, 
-            "col": 20, 
-            "spawns": {
-                "type": "hystrix", 
+            "x": 200, 
+            "y": 200,  
+            "spawn": {
                 "amount": 1
             }
         }, 
         {
-            "row": 10, 
-            "col": 10, 
-            "spawns": {
-                "type": "hystrix", 
-                "amount": 3
-                "isChampion": true
+            "x": 1000, 
+            "y": 200,  
+            "spawn": {
+                "amount": 3, 
+                "rank": 83 
             }
         }, 
         {
-            "row": 20, 
-            "col": 20, 
-            "spawns": {
-                "type": "hystrixQueen", 
+            "x": 2000, 
+            "y": 1000, 
+            "spawn": {
+                "type": [106], 
                 "amount": 1, 
-                "isUnique": true
+                "rank": 84
             }
         }, 
         {
-            "row": 30, 
-            "col": 20, 
-            "spawns": {
-                "type": "chest", 
+            "x": 1000, 
+            "y": 300, 
+            "spawn": {
+                "type": [104], 
                 "amount": 1
             }
         }
