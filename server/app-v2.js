@@ -1,14 +1,14 @@
 // app acts like a protocol parser and is the counterpart of the net module 
 // on the client-side
 var app = require('http').createServer(), 
-    io = require('socket.io').listen(app),
+    io = require('socket.io').listen(app, { log: false }),
     underscore = require('underscore'), 
     data = require('./../store/settings.json'),
     flags = require('./../shared/flags.json'), 
     core = require('./../shared/core.js'),
     item = require('./item.js'), 
-    entity = require('./entity.js')(core, flags),
-    env = require('./env.js')(entity), 
+    entity = require('./entity.js')(underscore, core, flags, data.entities),
+    env = require('./env.js')(underscore, entity, core), 
     map = require('./map.js')(io, underscore, env, entity, flags, core), 
     player = require('./player.js')(underscore, flags, core, data.settings, entity),
     game = require('./game.js')(underscore, map), 

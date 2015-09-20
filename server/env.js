@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(Entity) {
+module.exports = function(_, Entity, Core) {
 
     return {
 
@@ -21,7 +21,47 @@ module.exports = function(Entity) {
         */
         runEntity: function(entity, map) {
         
-            entity._changes = null;
+            if (entity.isDead) {
+            
+                return;
+            
+            }
+        
+            // first we handle any inputs we might have
+            if (entity._inputs && entity._inputs.length > 0) {
+            
+                Entity.inputs(entity, map);
+            
+            }
+
+            // skill cooldowns
+            if (entity.skills) {
+            
+                _.each(entity.skills, function(skill) {
+                
+                    if (skill._cooldown) {
+                    
+                        skill._cooldown = Math.max(0, skill._cooldown - this.seconds);
+                    
+                    }
+                
+                }, this);
+            
+            }
+            
+            // deferred attacks
+            if (entity._skill) {
+            
+                Entity.deferredSkill(entity, this.ticks, map);
+            
+            }
+
+            // aggro handling
+            if (entity.aggroRange) {
+            
+                Entity.aggro(entity, map, this.ticks);
+            
+            }
 
             // life per second 
             if (entity._c.life < entity.life && entity.lifePerSecond > 0) {
@@ -33,11 +73,36 @@ module.exports = function(Entity) {
             // move
             if (entity.target) {
             
-                Entity.move(entity, this.ticks, map.grid); 
+                Entity.move(entity, this.seconds, map); 
             
             }
         
-        }    
+        }, 
+        
+        /* RUNPROJECTILE
+        *
+        */
+        runProjectile: function(projectile, map) {
+        
+            if (projectile._targets) {
+                
+                Entity.hitTestTargets(projectile, projectile._targets);
+            
+            }
+        
+            if (projectile.target) {
+            
+                Entity.move(projectile, this.seconds, map);
+                
+                if (!projectile.target) { 
+                    
+                    Entity.change(projectile, 'isDead', true);
+                
+                }
+            
+            }   
+        
+        }            
 
     };
 

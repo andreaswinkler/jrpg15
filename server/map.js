@@ -11,36 +11,40 @@ module.exports = function(io, _, Env, Entity, F, Core) {
         */        
         load: function(mapId, player) {
         
-            var map = require('./../store/maps/' + mapId + '.json');
+            var map = Core.clone(require('./../store/maps/' + mapId + '.json'));
             
             map.players = [];
             map.heroes = [];
             map.creatures = [];
             map.lootables = [];
+            map.projectiles = [];
             map.level = player.hero.level || 1;
+            
+            // calculate the map dimensions in pixels by multiplying the grid 
+            // size by the tile size constant
+            map._width = map.width * Core.TS;
+            map._height = map.height * Core.TS;
             
             // temporary, create empty grid
             if (!map.grid) {
             
-                var w = 100;
-                var h = 100;
-                var total = w * h;
-                var grid = [];
+                var total = map.width * map.height;
+                var grid = {};
                 var r = 0;
                 var c = 0;
-                var ts = 50;
             
                 for (var i = 0; i < total; i++) {
                 
-                    c = i % w;
-                    r = ~~(i / h);
+                    c = i % map.width;
+                    r = ~~(i / map.height);
                 
-                    grid.push({
-                        x: c * ts, 
-                        y: r * ts, 
+                    grid[r + '_' + c] = {
+                        x: c * Core.TS, 
+                        y: r * Core.TS,
+                        z: 0,  
                         // set all tiles walkable except the ones at the border
-                        walkable: (c > 0 && c < w - 1 && r > 0 && r < h - 1)
-                    });    
+                        walkable: (c > 0 && c < map.width - 1 && r > 0 && r < map.height - 1)
+                    };    
                 
                 }
                 
@@ -98,6 +102,8 @@ module.exports = function(io, _, Env, Entity, F, Core) {
         
         // RUN - Server-side Map-level game loop
         run: function(map) {
+            
+            var elementsToRemove = [];
                 
             map.updates = null;
         
@@ -107,7 +113,32 @@ module.exports = function(io, _, Env, Entity, F, Core) {
             
             });
             
-            // loop through all creatures
+            _.each(map.creatures, function(creature) {
+            
+                Env.runEntity(creature, map);
+            
+            });
+            
+            elementsToRemove = [];
+            
+            _.each(map.projectiles, function(projectile) {
+            
+                Env.runProjectile(projectile, map);
+                
+                if (projectile.isDead) {
+                
+                    elementsToRemove.push(projectile);
+                
+                }
+            
+            });
+            
+            if (elementsToRemove.length > 0) {
+            
+                Core.removeAll(elementsToRemove, map.projectiles);
+            
+            }
+            
             // loop through all objects
             
             // check if we need to spawn something
@@ -115,9 +146,9 @@ module.exports = function(io, _, Env, Entity, F, Core) {
             
                 _.each(map.spawnPoints, function(spawnPoint) {
                 
-                    if (Core.inRangeOfAny(spawnPoint, map.heroes)) {
+                    if (spawnPoint.spawn && Core.inRangeOfAny(spawnPoint, map.heroes, 1000)) {
                     
-                        this.spawn(map, spawnPoint.x, spawnPoint.y, spawnPoint.spawn);            
+                        this.spawn(map, spawnPoint);            
                     
                     }
                 
@@ -142,7 +173,7 @@ module.exports = function(io, _, Env, Entity, F, Core) {
         */ 
         transportize: function(map) {
         
-            return [map._id, map.name, map.level, map.grid];
+            return [map._id, map.name, map.level, map.grid, map.width, map.height, map._width, map._height];
         
         }, 
 
@@ -157,25 +188,24 @@ module.exports = function(io, _, Env, Entity, F, Core) {
             player._map = map;
             player.hero._map = map;
         
-            player.hero.x = landingPoint.x;
-            player.hero.y = landingPoint.y;
-        
-            Entity.moveTo(player.hero, landingPoint.x, landingPoint.y);
+            Core.setPosition(player.hero, landingPoint.x, landingPoint.y, map);
         
         }, 
         
         // spawn something
-        spawn: function(map, x, y, settings) {
-        
+        spawn: function(map, spawnPoint) {
+
             // determine type: either the spawn point has a specific list 
             // of spawns, otherwise we fall back to the map-wide list 
             // then we randomly get an element from this list       
-            var type = Core.randomElement(settings.type || map.creatures), 
+            var type = Core.randomElement(spawnPoint.spawn.types || map.spawnTypes), 
             
             // determine the rank object rank to spawn: if not set 
             // we always assuem a 'normal' object (normal creature, normal
             // chest, etc)
-                rank = settings.rank || F.NORMAL, 
+                rank = spawnPoint.spawn.rank || F.NORMAL,
+                x = spawnPoint.x, 
+                y = spawnPoint.y,  
                 entity;
             
             // let's go through the types and handle creation
@@ -193,7 +223,9 @@ module.exports = function(io, _, Env, Entity, F, Core) {
                 
                     break;
             
-            }     
+            }  
+            
+            spawnPoint.spawn = null;   
         
         
         }               

@@ -11,7 +11,7 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
 
         // the events the server reacts upon, all others are ignored
         events: ['login', 'logout', 'disconnect', 'status', 'gameCreate', 
-            'gameJoin', 'mapLoaded', 'gameLeave', 'cmd'],  
+            'gameJoin', 'mapLoaded', 'gameLeave', 'input'],  
 
 // EXTERNALIZED EVENTS /////////////////////////////////////////////////////////
 // methods in this section can be called by the client /////////////////////////
@@ -126,11 +126,33 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
         *  have resumed their game loop
         */
         mapLoaded: function(event, socket, data) {
+            
+            var update = {};
+            
+            update[socket._player.hero._id] = {
+                x: socket._player.hero.x, 
+                y: socket._player.hero.y, 
+                z: socket._player.hero.z
+            };
                 
             // activate the game
             socket._player._game.isPaused = false;
+
+            socket.emit('updates', update);
         
-        },                 
+        },
+        
+        /* INPUT
+        *  we handle an input (click, keypress) from the client
+        */
+        input: function(event, socket, data) {
+        
+            // let's store the input on the hero entity so we can 
+            // process it in the next loop
+            // data contains key, x, y
+            socket._player.hero._inputs.unshift(data);
+        
+        },                          
         
 // PRIVATE SECTION /////////////////////////////////////////////////////////////
 

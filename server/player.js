@@ -46,7 +46,7 @@ module.exports = function(_, F, Core, Settings, Entity) {
                 player = require('./../store/players/' + playername + '.json');
                 
                 // create the hero character from the stored data
-                player.hero = Entity.createCharacter(player.hero);
+                player.hero = Entity.createCharacter(Core.clone(player.heroData));
                 
                 // setup stuff when creating a new player
                 // TODO: handle this in the create method

@@ -11,7 +11,7 @@ var Net = {
         status: ['players', 'games', 'msAvgServerLoop'], 
         gameCreate: ['players', 'isPublic', 'isPaused', 'tsStart'], 
         login: ['_id', 'name', 'hero', 'balance'], 
-        map: ['_id', 'name', 'grid']
+        map: ['_id', 'name', 'level', 'grid', 'width', 'height', '_width', '_height']
     },      
                       
     init: function(success) {

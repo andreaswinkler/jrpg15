@@ -1,24 +1,26 @@
 {
     "_id": 1, 
-    "name": "Hystrix Lair", 
+    "name": "Hystrix Lair",
+    "width": 20, 
+    "height": 20,  
     "landingPoints": {
         "entry": {
             "x": 100, 
             "y": 100
         }
     },
-    "creatures": [77],
+    "spawnTypes": [77],
     "championPacks": 3,   
     "spawnPoints": [
         {
-            "x": 200, 
-            "y": 200,  
+            "x": 500, 
+            "y": 500,  
             "spawn": {
                 "amount": 1
             }
         }, 
         {
-            "x": 1000, 
+            "x": 800, 
             "y": 200,  
             "spawn": {
                 "amount": 3, 
@@ -26,19 +28,19 @@
             }
         }, 
         {
-            "x": 2000, 
-            "y": 1000, 
+            "x": 100, 
+            "y": 800, 
             "spawn": {
-                "type": [106], 
+                "types": [106], 
                 "amount": 1, 
                 "rank": 84
             }
         }, 
         {
-            "x": 1000, 
-            "y": 300, 
+            "x": 400, 
+            "y": 750, 
             "spawn": {
-                "type": [104], 
+                "types": [104], 
                 "amount": 1
             }
         }

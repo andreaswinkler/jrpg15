@@ -13,7 +13,7 @@
             ]
         }
     },
-    "blueprints": [
+    "items": [
         [
             "Gold", 1, 100, 1, 
             ["gold", "autopickup"], 
@@ -46,15 +46,43 @@
             { "sockets": [0, 3] } 
         ]
     ],
-    "creatures": [
-        [
-            "Hystrix", 
-            ["hystrix", "beast", "ranged"], 
-            { "assetId": "hystrix.png", "dmg": 1, "life": 10, "speed": 1, "as": 0.25, "aggroRange": 500, "skills": [
-                ["Spike", ["arrow", "physical"], { "range": 1000, "speed": 1.5, "dmgx": 1 } ]
-            ] }
-        ]
-    ],
+    "entities": {
+        "77": {
+            "name": "Hystrix", 
+            "type": 78,
+            "entityType": 107,  
+            "assetId": "hystrix.png", 
+            "dmg": 5, 
+            "life": 10, 
+            "speed": 75, 
+            "attackSpeed": 0.25, 
+            "aggroRange": 500,
+            "width": 50, 
+            "height": 50, 
+            "fleeOnHit": true,  
+            "skills": [
+                {
+                    "name": "Spike",
+                    "assetId": "spike.png",  
+                    "range": 1000, 
+                    "speed": 150, 
+                    "dmgMultiplier": 1, 
+                    "dmgType": 87, 
+                    "cooldown": 5, 
+                    "type": 80, 
+                    "width": 10, 
+                    "height": 10
+                }
+            ]
+        }, 
+        "104": {
+            "name": "Chest", 
+            "entityType": 108, 
+            "assetId": "chest.png", 
+            "width": 50, 
+            "height": 50
+        }
+    },
     "affixes": {
         "prefixes": [
             [1, 1, 20, ["sword"], "Sharp", "dmg", [1, 2]], 

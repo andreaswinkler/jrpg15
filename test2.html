@@ -17,16 +17,27 @@
 <link rel="stylesheet" href="styles.css" />
 <style>
 #info { position: absolute; top: 0; left: 0; width: 100%; height: 100px; background: #000; color: #eee; }
+#e_1 { position: absolute; top: 0; left: 0; width: 50px; height: 50px; background: #fff; color: #000; display: none; }
+.entity { position: absolute; top: 0; left: 0; width: 30px; height: 30px; background: #c10000; display: block; }
+.entityType_108 { background: #00c100; }
+#mapgrid { position: absolute; top: 0; left; 0; background: rgba(210,0,0,.25); display: block; }
 </style>
 </head>
 <body>
 <div id="jrpg15" class="fullscreen"></div>
+<div id="mapgrid"></div>
 <div id="info">
 Latency: <span id="latency"></span>
 Players: <span id="players"></span>
 Games: <span id="games"></span>
 ServerLoopAvg: <span id="serverLoopAvg"></span>
+Map: <span id="map"></span>
+<br />
+Level: <span id="level"></span>
+Life: <span id="life"></span>
+XP: <span id="xp"></span>
 </div>
+<div id="e_1"></div>
 </body>
 <script type="text/javascript">
 
@@ -46,14 +57,88 @@ function _updateLatency() {
 
 }
 
+function _walkToDummy() {
+
+    Net.send('input', { key: 'mouseLeft', x: 300, y: 300 });
+
+}
+
 var entities = {};
 var map = null;
+var raf = window.requestAnimationFrame || 
+         window.mozRequestAnimationFrame || 
+         window.webkitRequestAnimationFrame || 
+         window.msRequestAnimationFrame;
+var lastLoop;
+var seconds = 0;
+
+function _run() {
+
+    var ts = +new Date(), 
+        dt = ts - (lastLoop || ts);
+    
+    if (dt >= 16.6) {
+    
+        seconds = dt / 1000;
+        lastLoop = ts;
+        
+        _update();
+        
+        _draw();
+    
+    } else if (!lastLoop) {
+    
+        lastLoop = ts;    
+    
+    } 
+    
+    raf.call(window, function() { _run() });   
+
+}
+
+function _update() {
+
+    _.each(entities, function(e) {
+  
+        if (e.target) {
+            
+            Core.moveByTarget(e, e.target, seconds, map);
+        
+        }
+    
+    });
+
+}
+
+function _draw() {
+
+    _.each(entities, function(e) {
+
+        $('#e_' + e._id).css('top', (e.y - e.height) + 'px').css('left', (e.x - e.width / 2) + 'px').html('#' + e._id + '<br />' + (e._c && e._c.life ? ~~e._c.life : '')); 
+    
+    });    
+    
+    _updateStats(entities[1]);   
+
+}
+
+function _updateStats(hero) {
+
+    $('#life').html(~~hero._c.life);
+    $('#xp').html(hero.xp);
+    $('#level').html(hero.level);
+
+}
 
 Net.init(function() {
 
     Net.send('login', { playername: '1983', password: '' }, function(data) { 
-        console.log(data.hero);
+
         entities[data.hero._id] = data.hero;
+        
+        _updateStats(data.hero);
+        
+        $('#e_1').show();
 
         Net.send('gameCreate', { isPublic: false }, function(data) {
 
@@ -72,7 +157,18 @@ Net.init(function() {
         
         map = data;
         
+        $('#mapgrid').css('width', data._width + 'px').css('height', data._height + 'px');
+        
+        Core.setPosition(entities[1], entities[1].x, entities[1].y, map);
+        
+        $('#map').html(map.name);
+        
         Net.send('mapLoaded');
+        
+        // we start our game loop and after a few seconds we walk to a position
+        _run();
+        
+        setTimeout(_walkToDummy, 3000);
     
     });
     
@@ -80,11 +176,11 @@ Net.init(function() {
     
         _.each(data, function(value, key) {
         
-            var entity;
-        
             if (!entities[key]) {
             
                 entities[key] = { _id: key };
+                
+                $('body').append('<div class="entity" id="e_' + key + '"></div>');
             
             }
         
@@ -93,10 +189,30 @@ Net.init(function() {
                 Core.deepUpdateProperty(entities[key], k, v);
             
             });
+            
+            $('#e_' + key)
+                .css('width', entities[key].width + 'px')
+                .css('height', entities[key].height + 'px')
+                .addClass('entityType_' + entities[key].entityType);
+            
+            Core.setPosition(entities[key], entities[key].x, entities[key].y, map);
+            
+            if (entities[key].isDead) {
+            
+                Core.remove(entities[key], entities);
+                $('#e_' + key).remove();
+            
+            } 
         
         });
     
     });
+
+});
+
+$(document).click(function(ev) {
+
+    Net.send('input', { key: 'mouseLeft', x: ev.pageX, y: ev.pageY });    
 
 });
 
