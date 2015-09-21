@@ -1,21 +1,18 @@
 "use strict";
 
-module.exports = function(F, Library) {
+module.exports = function(F, DropTables, Core) {
 
     return {
     
-        // create a specific item by providing a blueprint
-        create: function(blueprintFlag, level, rank, quality) {
+        // create a drop
+        createDrop: function(lootable, magicFind, goldFind) {
         
-            var blueprint = Library.blueprint(blueprintFlag), 
-                itemType = Library.itemTypeByBlueprint(blueprint), 
-                level = level || 1, 
-                rank = Utils.rank(rank || F.NORMAL), 
-                quality = Utils.quality(quality || F.STANDARD); 
-
-            return this.createItem(itemType, level, 0, 0, blueprint, rank, quality);
+                // get drop table for lootable
+            var dropTable = DropTables[lootable.dropTable], 
+                // get amount to drop
+                amount = Core.randomInt(dropTable.amountMin, dropTable.amountMax);
         
-        }
+        } 
     
     }    
 

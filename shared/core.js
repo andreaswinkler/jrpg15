@@ -34,6 +34,51 @@
     
     };
 
+    /* ARCHEMEDEAN SPIRAL POSITIONS
+    *  return amount positions on an Archemedean spiral which are 
+    *  chord away from each other 
+    *  
+    *  this is from here:
+    *  http://stackoverflow.com/questions/13894715/draw-equidistant-points-on-a-spiral               
+    */    
+    exports.equidistantPositionsOnArchimedeanSpiral = function(amount, chord, x, y) {
+    
+            // number of coils, this should be determined by the amount
+        var coils = 5, 
+            // value of theta corresponding to end of last coil
+            thetaMax = coils * 2 * Math.PI, 
+            radius = chord * coils,  
+            // How far to step away from center for each side
+            awayStep = radius / thetaMax,
+            positions = [], 
+            theta, away, around;
+        
+        // For every side, step around and away from center.
+        // start at the angle corresponding to a distance of chord
+        // away from centre.
+        for (theta = chord / awayStep; theta <= thetaMax; theta++) {
+        
+            away = awayStep * theta;
+            
+            positions.push({
+                x: x + Math.cos(theta) * away, 
+                y: y + Math.sin(theta) * away
+            });
+            
+            theta += chord / away;  
+            
+            if (positions.length >= amount) {
+            
+                break;
+            
+            }  
+        
+        }
+        
+        return positions;
+    
+    };
+    
     // space 
     exports.createSpace = function(flag, dimensions) {
     
@@ -65,9 +110,10 @@
     
     };
     
-    // deep update a property
-    // attribute is passed in as path (e.g.: a.b.c), path is created if 
-    // it can't be traversed
+    /* DEEP UPDATE PROPERTY
+    *  attribute is passed in as path (e.g.: a.b.c), path is created if 
+    *  it can't be traversed    
+    */    
     exports.deepUpdateProperty = function(obj, path, value) {
     
         var path = path.split('.'),  
@@ -83,35 +129,61 @@
     
     };
     
-    // distance
+    /* DISTANCE
+    *  calculate the distance between two positions (x/y) and (x2/y2)
+    */    
     exports.distance = function(x, y, x2, y2) {
     
         return Math.sqrt((x2 - x) * (x2 - x) + (y2 - y) * (y2 - y));      
     
     };
     
-    // hitTest
+    /* HIT TEST
+    *  check if a given entity overlaps any of the entities in the list
+    *  the entity itself is always excluded from the check    
+    */    
     exports.hitTest = function(entity, list) {
         
-        return _.find(list, function(e) { return e._id != entity._id && this.hitTestRects(e._hitBox, entity._hitBox); }, this);
+        return _.find(list, function(e) { 
+        
+            return e._id != entity._id && this.hitTestRects(e._hitBox, entity._hitBox); 
+        
+        }, this);
     
     };
     
-    // hitTestPosition
+    /* HIT TEST POSITION
+    *  return the first element from a list which positively hittests against 
+    *  a given position (x,y) 
+    *  the check is performed by comparing the position against the hitBox of 
+    *  each element [x,y,x2,y2] by applying the following condition
+    *  hitbox.x <= position.x <= hitbox.x2, hitbox.y <= position.y <= hitbox.y2                 
+    */    
     exports.hitTestPosition = function(list, x, y) {
         
-        return _.find(list, function(e) { return x >= e._hitBox[0] && x <= e._hitBox[2] && y >= e._hitBox[1] && y <= e._hitBox[3]; });
+        return _.find(list, function(e) { 
+        
+            return x >= e._hitBox[0] && 
+                   x <= e._hitBox[2] && 
+                   y >= e._hitBox[1] && 
+                   y <= e._hitBox[3]; 
+        
+        });
     
     };
     
-    // hitTestRects
+    /* HIT TEST RECTS
+    *  check if two rectangles intersect    
+    */    
     exports.hitTestRects = function(r1, r2) {
         
         return !(r1[0] > r2[2] || r1[2] < r2[0] || r1[1] > r2[3] || r1[3] < r2[1]);  
             
     };
     
-    // calculate the angle between the given vector and the x-axis
+    /* DIRECTION
+    *  calculate the angle theta between two positions (x/y) and (x2/y2)
+    */    
     exports.direction = function(x, y, x2, y2) {
     
         var theta = Math.atan2((y2 - y) * -1, x2 - x);
@@ -173,7 +245,11 @@
     */    
     exports.getFirstInRange = function(entity, entities, range) {
     
-        return _.find(entities, function(e) { return this.inRange(entity, e, range); }, this) || null;
+        return _.find(entities, function(e) { 
+        
+            return this.inRange(entity, e, range); 
+        
+        }, this) || null;
     
     };
     
@@ -183,7 +259,13 @@
     */
     exports.getNearest = function(entity, entities) {
     
-        return _.first(_.sortBy(entities, function(e) { return this.distance(e.x, e.y, entity.x, entity.y); }, this));
+        return _.first(
+            _.sortBy(entities, function(e) { 
+            
+                return this.distance(e.x, e.y, entity.x, entity.y); 
+            
+            }, this)
+        );
     
     };    
     
@@ -196,7 +278,9 @@
     
     };
     
-    // einheitsvektor
+    /* UNIT VECTOR
+    *  calculate the unit vector between two positions
+    */    
     exports.unitVector = function(pos1, pos2) {
     
         var d = this.distance(pos1.x, pos1.y, pos2.x, pos2.y);
@@ -208,7 +292,12 @@
     
     };
     
-    // create a target
+    /* CREATE TARGET
+    *  create a move target based on a destination
+    *  the target holds all necessary information to before the move 
+    *  operation on the entity each frame and tells the system when 
+    *  to stop the movement            
+    */    
     exports.createTarget = function(x, y, tx, ty, range, infinitely) {
         
         var d;
@@ -236,7 +325,9 @@
             
     };
     
-    // move to
+    /* MOVE BY TARGET
+    *  move an entity by its move target
+    */    
     exports.moveByTarget = function(entity, target, seconds, map) {
     
         // speed 1 = 1px/s
@@ -297,34 +388,36 @@
     
     }; 
     
-    // get a tile by it's x and y coordinates
+    /* TILE
+    *  get the tile on the given position (x/y)
+    */    
     exports.tile = function(map, x, y) {
 
-        // sanity check if the given position is inside our map
+        // sanity check if the given position is inside our maps boundaries
         if (x >= 0 && x <= map._width && y >= 0 && y <= map._height) {
 
+            // return the tile by calculating its index from the position
+            // row = y / TILE_SIZE, col = x / TILE_SIZE, index = {row}_{col}
+            // if the element is undefined an empty object is returned; this 
+            // enables e.g. an 'is walkable' check without errors
             return map.grid[(~~(y / this.TS)) + '_' + (~~(x / this.TS))] || {};
         
         }
         
+        // the position is outside our maps boundaries -> let's return 
+        // an empty object to allow for e.g. 'is walkable' checks without 
+        // causing errors
         return {}; 
     
     };
     
-    /* CANUSESKILL
-    *  check if a skill is ready and can be afforder
+    /* CAN USE SKILL
+    *  check if a skill is ready and can be afforded
     */
     exports.canUseSkill = function(entity, skill) {
     
-        if (skill._cooldown) {
-            console.log('cant use skill', skill.name, 'oncooldown');
-        }
-        
-        if (skill.manaCost > entity._c.mana) {
-            console.log('cant use skill', skill.name, 'nomana');    
-        }
-    
-        return !skill._cooldown && skill.manaCost <= entity._c.mana;
+        return !skill._cooldown && 
+               skill.manaCost <= entity._c.mana;
     
     };
     
@@ -374,13 +467,23 @@
                         
                         } else {
                         
-                            // if we couldn't find anything we walk to the position
-                            // if possible 
-                            if (this.tile(map, input.x, input.y).walkable) {
+                            // we don't have a target we're not in range of; 
+                            // let's see if we can find a lootable
+                            if (!target) {
                             
-                                handlers.moveTo.call(handlers.context, entity, input.x, input.y);     
+                                target = this.hitTestPosition(map.lootables, input.x, input.y);
+                                
+                                if (target && this.inRange(entity, target, 100)) {
+                                
+                                    handlers.loot.call(handlers.context, entity, target, map);    
+                                
+                                }
                             
                             }
+                        
+                            // if we couldn't find anything we walk towards 
+                            // the position
+                            handlers.moveTo.call(handlers.context, entity, input.x, input.y);
                         
                         }
                     
@@ -430,6 +533,23 @@
         return list[this.randomInt(0, list.length - 1)];
     
     }; 
+    
+    // RANDOM ELEMENT BY PROBABILITY
+    exports.randomWeightedElement = function(weightedList) {
+    
+        var totalProbability = _.reduce(weightedList, function(memo, i) { return memo + i[1]; }, 0), 
+            cumulatedProbability = 0, 
+            random = Math.random();
+        
+        return _.find(weightedList, function(i) {
+        
+            cumulatedProbability += (i[1] / totalProbability);
+            
+            return random <= cumulatedProbability;
+            
+        }).shift();
+    
+    };
     
     // RANDOM: return a random decimal number between min and max
     exports.random = function(min, max) {

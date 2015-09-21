@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(_, Core, F, Blueprints) {
+module.exports = function(_, Core, F, Blueprints, Item) {
 
     return {
     
@@ -8,10 +8,14 @@ module.exports = function(_, Core, F, Blueprints) {
 
             character.life = character.vit * 10;
             character.mana = character.int * 5;
+            character.magicFind = 1;
+            character.goldFind = 1;
             character._c = {
                 life: character.life, 
                 mana: character.mana, 
-                speed: character.speed
+                speed: character.speed, 
+                magicFind: character.magicFind, 
+                goldFind: character.goldFind
             };
             character.width = 50;
             character.height = 50;
@@ -422,6 +426,53 @@ module.exports = function(_, Core, F, Blueprints) {
         
         }, 
         
+        /* LOOT
+        *  open a lootable
+        */        
+        loot: function(entity, lootable, map) {
+        
+            var items = Item.createDrop(lootable, entity._c.magicFind, entity._c.goldFind), 
+                // get items.length positions along an Archimedean spiral
+                positions = Core.equidistantPositionsOnArchimedeanSpiral(items.length, 30, lootable.x, lootable.y); 
+            
+            _.each(items, function(item, index) {
+            
+                this.dropItem(item, map, positions[index].x, positions[index].y);
+            
+            }, this);         
+        
+        }, 
+        
+        /* DROP ITEM
+        *  drop an Item to the ground
+        */        
+        dropItem: function(item, map, x, y) {
+        
+            var droppedItem = {
+                _id: Core.id(), 
+                _item: item, 
+                _map: map, 
+                type: item.type, 
+                rank: item.rank, 
+                x: x, 
+                y: y, 
+                z: Core.tile(map, x, y).z, 
+                name: item.name, 
+                width: 20, 
+                height: 20  
+            };
+        
+            map.droppedItems.push(droppedItem);
+            
+            // send 'create' update
+            _.each(['type', 'rank', 'x', 'y', 'z', 'name', 'width', 'height'], function(e) {
+                    
+                this.change(item e, item[e]);    
+                
+            }, this); 
+        
+        }, 
+        
         /* INPUTS
         *  handle any player inputs
         */        
@@ -432,7 +483,8 @@ module.exports = function(_, Core, F, Blueprints) {
             Core.resolveInputs(entity, map, {
                 context: this, 
                 moveTo: this.moveTo,  
-                skill: this.skill    
+                skill: this.skill, 
+                loot: this.loot    
             });
         
         }
