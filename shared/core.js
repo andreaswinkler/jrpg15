@@ -507,6 +507,19 @@
     
     };
     
+    // extend an object with another one
+    exports.extend = function(obj, src) {
+    
+        Object.keys(src).forEach(function(key) { 
+        
+            obj[key] = src[key];
+        
+        });
+        
+        return obj;
+    
+    };
+
     // set position
     // x/y/z marks the bottom center of the entity
     exports.setPosition = function(entity, x, y, map) {
@@ -530,7 +543,7 @@
     // RANDOMELEMENT: randomly return an element from a list
     exports.randomElement = function(list) {
 
-        return list[this.randomInt(0, list.length - 1)];
+        return list.length > 0 ? list[this.randomInt(0, list.length - 1)] : null;
     
     }; 
     

@@ -467,7 +467,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             // send 'create' update
             _.each(['type', 'rank', 'x', 'y', 'z', 'name', 'width', 'height'], function(e) {
                     
-                this.change(item e, item[e]);    
+                this.change(item, e, item[e]);    
                 
             }, this); 
         

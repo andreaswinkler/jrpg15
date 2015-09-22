@@ -8,45 +8,188 @@
                 [3, 0.1]
             ], 
             "items": [
-                ["weapon", 0.2], 
-                ["gold", 0.7], 
-                ["gem", 0.1]
+                ["sword", 0.5], 
+                ["gold", 2], 
+                ["ruby", 0.1]
             ]
         }
     },
-    "items": [
-        [
-            "Gold", 1, 100, 1, 
-            ["gold", "autopickup"], 
-            "Buys you goods and services.", 
-            {}
-        ],
-        [
-            "Health Potion", 1, 100, 0.5, 
-            ["healthpotion", "potion", "autopickup"], 
-            "Restores {settings.healthpotion_restore_percent}% of your health and has a {settings.healthption_cooldown_duration_seconds} cooldown.",
-            { "stack": 1, "asset": ["potions.png", 0, 0], "spaceWidth": 1, "spaceHeight": 1 }
-        ], 
-        [
-            "Chipped Ruby", 1, 10, 1, 
-            ["gem", "ruby", "ornament", "chipped"], 
-            "", 
-            { "weapon": [["minDmg", 1], ["maxDmg", 2]], "headpiece": [["bonusXp", 10]], "armor": [["str", 10]], "jewelry": [["critDmg", 10]], "stack": 1, "asset": ["gems.png", 0, 0] }
-        ], 
-        [
-            "Flawed Ruby", 9, 20, 1, 
-            ["gem", "ruby", "ornament", "flawed"], 
-            "", 
-            { "weapon": [["minDmg", 2], ["maxDmg", 4]], "headpiece": [["bonusXp", 12.5]], "armor": [["str", 15]], "jewelry": [["critDmg", 15]], "stack": 1, "assetId": ["gems.png", 0, 1] }
-        ],
-        [
-            "Small Sword", 1, 10, 1, 
-            ["weapon", "onehand", "sword", "item", "smallsword"], 
-            "A butter knife.", 
-            { "minDmg": 1, "maxDmg": 3, "as": 1.2, "durability": 10, "asset": ["swords.png", 0, 0], "spaceWidth": 1, "spaceHeight": 2 },
-            { "sockets": [0, 3] } 
-        ]
+    "items": {
+        "sword": {
+            "type": 0,
+            "subtype": 26, 
+            "isOneHand": true     
+        }, 
+        "gold": {
+            "type": 44 
+        }, 
+        "ruby": {
+            "type": 21
+        }
+    },
+    "itemRanks": [
+        {
+            "minLevel": 1, 
+            "maxLevel": 20, 
+            "rank": 0, 
+            "subtypes": {
+                "sword": {
+                    "name": "Small Sword", 
+                    "minDmg": 1, 
+                    "maxDmg": 3, 
+                    "attackSpeed": 1.4,
+                    "maxSockets": 0, 
+                    "durability": 10
+                }
+            }
+        }
     ],
+    "itemQualities": [
+        [{
+            "prefix": "Damaged ", 
+            "quality": 50,
+            "durabilityMultiplier": 0.75, 
+            "dmgMultiplier": 0.75, 
+            "armorMultiplier": 0.75  
+        }, 0.5], 
+        [{
+            "prefix": "", 
+            "quality": 37, 
+            "durabilityMultiplier": 1, 
+            "dmgMultiplier": 1, 
+            "armorMultiplier": 1 
+        }, 2], 
+        [{
+            "prefix": "Decent ", 
+            "quality": 51, 
+            "durabilityMultiplier": 1.25, 
+            "dmgMultiplier": 1.1, 
+            "armorMultiplier": 1.2 
+        }, 1], 
+        [{
+            "prefix": "Exceptional ", 
+            "quality": 52, 
+            "durabilityMultiplier": 1.5, 
+            "dmgMultiplier": 1.25, 
+            "armorMultiplier": 1.5 
+        }, 0.5], 
+        [{
+            "prefix": "Etheral ", 
+            "quality": 43, 
+            "durabilityMultiplier": 1, 
+            "dmgMultiplier": 1.5, 
+            "armorMultiplier": 2 
+        }, 0.1]
+    ],
+    "itemRarities": [
+        [{
+            "prefix": "", 
+            "rarity": 37
+        }, 1, {
+            "minLevel": 1, 
+            "maxLevel": 100
+        }], 
+        [{
+            "prefix": "Magic ", 
+            "rarity": 38,
+            "affixes": 1 
+        }, 0.5, {
+            "minLevel": 5, 
+            "maxLevel": 25
+        }], 
+        [{
+            "prefix": "Magic ", 
+            "rarity": 38, 
+            "affixes": 2
+        }, 0.5, {
+            "minLevel": 20, 
+            "maxLevel": 100
+        }]
+    ], 
+    "itemAffixes": [
+        [{
+            "name": "Sharpened #", 
+            "rank": 111, 
+            "modifiers": {
+                "maxDmg": [1, 3]
+            }
+        }, 1, {
+            "minLevel": 1, 
+            "maxLevel": 10, 
+            "type": 0
+        }], 
+        [{
+            "name": "# of Violence", 
+            "rank": 111, 
+            "modifiers": {
+                "critChance": [1, 2]
+            }
+        }, 1, {
+            "minLevel": 1, 
+            "maxLevel": 10, 
+            "type": 0
+        }]
+    ],   
+    "gemRanks": [
+        { 
+            "minLevel": 5, 
+            "maxLevel": 20,
+            "rank": 0,  
+            "prefix": "", 
+            "modifiers": {
+                "helm": {
+                    "ruby": [
+                        { "bonusXpPerc": 5 }
+                    ]
+                }, 
+                "armor": {
+                    "ruby": [
+                        { "str": 5 }
+                    ]
+                }, 
+                "weapon": {
+                    "ruby": [
+                        { "minDmg": 1, "maxDmg": 2 }
+                    ]
+                }, 
+                "other": {
+                    "ruby": [
+                        { "lifePerc": 2.5 }
+                    ]
+                }
+            }
+            
+        }, 
+        { 
+            "minLevel": 15, 
+            "maxLevel": 30,
+            "rank": 1,  
+            "prefix": "Flawless ", 
+            "modifiers": {
+                "helm": {
+                    "ruby": [
+                        { "bonusXpPerc": 10 }
+                    ]
+                }, 
+                "armor": {
+                    "ruby": [
+                        { "str": 25 }
+                    ]
+                }, 
+                "weapon": {
+                    "ruby": [
+                        { "minDmg": 5, "maxDmg": 25 }
+                    ]
+                }, 
+                "other": {
+                    "ruby": [
+                        { "lifePerc": 5 }
+                    ]
+                }
+            }
+            
+        } 
+    ],  
     "entities": {
         "77": {
             "name": "Hystrix", 
@@ -85,31 +228,6 @@
             "height": 50
         }
     },
-    "affixes": {
-        "prefixes": [
-            [1, 1, 20, ["sword"], "Sharp", "dmg", [1, 2]], 
-            [1, 1, 20, ["weapon"], "Cruel", "critChance", [1, 3]], 
-            [1, 1, 20, ["weapon"], "Mechanic's", "sockets", [1, 3]]
-        ], 
-        "suffixes": [
-            [1, 1, 20, ["weapon"], "of Brutality", "maxDmg", [1, 5]], 
-            [1, 1, 20, ["weapon"], "of Suffering", "critDmg", [10, 20]]
-        ]
-    }, 
-    "itemRanks": [
-        ["normal", 1, 1, 100, null, ""], 
-        ["magic", 0.3, 1, 100, [[1, 0.5], [2, 0.5]], "Magic "], 
-        ["rare", 0.2, 1, 100, [[3, 0.5], [4, 0.4], [5, 0.1]], "Rare "], 
-        ["set", 0.05, 15, 100, null, "Set "], 
-        ["legendary", 0.05, 15, 100, null, "Legendary "] 
-    ],
-    "itemQualities": [
-        ["inferior", 0.2, 1, 100, 0.85], 
-        ["standard", 1, 1, 100, 1], 
-        ["good", 0.2, 1, 100, 1.1], 
-        ["exceptional", 0.05, 1, 100, 1.2], 
-        ["etheral", 0.05, 1, 100, 1.4]
-    ],
     "labels": {
         "dmg": "{+#%} damage", 
         "critChance": "{+#%} critical hit chance", 

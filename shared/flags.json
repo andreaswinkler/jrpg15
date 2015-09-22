@@ -50,7 +50,7 @@
     "PERFECT": 48, 
     "SOCKETED": 49, 
     "INFERIOR": 50,
-    "GOOD": 51, 
+    "DECENT": 51, 
     "EXCEPTIONAL": 52, 
     "STANDARD": 53, 
     "ITEM": 54,
@@ -109,5 +109,7 @@
     "CREATURE": 107, 
     "LOOTABLE": 108,
     "PREATTACK": 109, 
-    "POSTATTACK": 110
+    "POSTATTACK": 110, 
+    "PRIMARY": 111, 
+    "SECONDARY": 112
 } 
