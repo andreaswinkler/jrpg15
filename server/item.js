@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, ItemQualities, ItemAffixes, Core) {
+module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, ItemRarities, ItemQualities, ItemAffixes, Core) {
 
     return {
     
@@ -198,22 +198,49 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
         
         }, 
         
-        selectRarity: function(level) {
+        /* SELECT RARITY
+        *  select an item rarity based on level and magicFind
+        *  the rarities are stored in the form
+        *  [{RARITY}, {PROBABILITY}, {SETTINGS}]
+        */   
+        selectRarity: function(level, magicFind) {
         
-            return Core.randomWeightedElement(_.filter(ItemRarities, function(i) { 
-                
-                // we include only rarities available for this level 
-                return i[2].minLevel <= level && i[2].maxLevel >= level;  
+            var list = [];
             
-            })); 
+            _.each(ItemRarities, function(i) {
+            
+                // make sure the rarity is valid for the given level
+                if (i[2].minLevel <= level && i[2].maxLevel >= level) {
+                
+                    // adjust the base probability (i[1]) with the given magic
+                    // find value
+                    // to allow for different effects of magic find on different 
+                    // rarities, setings contain a probabilityMultiplier value 
+                    // (0 = no effect of magic find, 
+                    //  1 = linear effect of magic find, 
+                    //  2 = double effect of magic find, etc)
+                    list.push([
+                        i[0], 
+                        i[2].probabilityMultiplier > 0 ? 
+                            i[1] * i[2].probabilityMultiplier * magicFind : 
+                            i[1]
+                    ]);
+                
+                }
+            
+            });
+        
+            return Core.randomWeightedElement(list);
         
         }, 
         
-        // create an item
-        createItem: function(type, rank, level) {
+        /* CREATE ITEM
+        *  create an item of given type, rank an level
+        */
+        createItem: function(type, rank, level, magicFind) {
         
             var item = Core.clone(Blueprints[type]), 
-                rarity = this.selectRarity(level), 
+                rarity = this.selectRarity(level, magicFind), 
                 quality;
             
             // set the level of the item
@@ -247,14 +274,20 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
         
         }, 
         
-        // create an item drop
-        createItemDrop: function(type, level) {
+        /* CREATE ITEM DROP
+        *  create a single weapon or armor or jewelry piece by type and level
+        */
+        createItemDrop: function(type, level, magicFind) {
         
+            // choose a rank (e.g. small sword, sword, elite sword) based 
+            // on the given level
             var itemRank = this.selectByLevel(ItemRanks, level).subtypes[type];
             
+            // if an item rank for the given level and item type exists
+            // create the item
             if (itemRank) {
             
-                return this.createItem(type, rank, level);
+                return this.createItem(type, itemRank, level, magicFind);
             
             }
         
@@ -262,7 +295,9 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
             
         }, 
     
-        // create a single item for a drop
+        /* CREATE DROP ELEMENT
+        *  create and return a single dropped item of a given type and level
+        */        
         createDropElement: function(type, level, magicFind, goldFind) {
         
             switch (Blueprints[type].type) {
@@ -281,7 +316,7 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
                 
                 default: 
                 
-                    return this.createItemDrop(type, level);
+                    return this.createItemDrop(type, level, magicFind);
                 
                     break;  
             
@@ -289,15 +324,21 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
         
         }, 
     
-        // create a drop
+        /* CREATE DROP
+        *  create a drop of items based on a lootable and the heroes
+        *  current magic and gold find values   
+        *  the method returns a list of items             
+        */        
         createDrop: function(lootable, magicFind, goldFind) {
-        
+
                 // get drop table for lootable
             var dropTable = DropTables[lootable.dropTable], 
                 // get amount to drop
                 amount = Core.randomWeightedElement(dropTable.amount), 
                 drop = [], 
                 item, i;
+            
+            console.log('create drop', lootable.dropTable, magicFind, goldFind, amount);
             
             // only proceed if we drop at least one piece
             if (amount > 0) {
@@ -306,7 +347,8 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
                 
                     item = this.createDropElement(
                         // specify the item type
-                        Core.randomWeightedElement(dropTable.items), 
+                        Core.randomWeightedElement(dropTable.items),
+                        lootable.level,  
                         magicFind, 
                         goldFind 
                     );  
@@ -315,7 +357,8 @@ module.exports = function(_, F, DropTables, Blueprints, GemRanks, ItemRanks, Ite
                     // Broken Crown style
                     
                     // for various reasons it can happen that we don't get 
-                    // back an item (e.g. level restrictions for an item type)
+                    // returned an item (e.g. level restrictions for an 
+                    // item type)
                     if (item) {
                     
                         drop.push(item);  

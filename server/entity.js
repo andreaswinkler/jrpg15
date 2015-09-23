@@ -10,6 +10,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             character.mana = character.int * 5;
             character.magicFind = 1;
             character.goldFind = 1;
+            character.balance = 0;
             character._c = {
                 life: character.life, 
                 mana: character.mana, 
@@ -19,7 +20,6 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             };
             character.width = 50;
             character.height = 50;
-            character._halfWidth = character.width / 2;
             character.attackSpeed = 1;
             character.dmg = 1.5;
             character.skills = [{
@@ -39,6 +39,23 @@ module.exports = function(_, Core, F, Blueprints, Item) {
                 name: 'Bash'
                 
             }];
+            character.equipment = {
+                head: null, 
+                shoulders: null, 
+                torso: null, 
+                belt: null, 
+                finger1: null, 
+                finger2: null, 
+                neck: null,
+                bracers: null, 
+                gloves: null, 
+                pants: null, 
+                boots: null, 
+                token1: null, 
+                token2: null, 
+                token3: null 
+            };
+            character.inventory = [];
             
             character.level = 1;
             
@@ -59,7 +76,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             
                 this.applyDamage(entity, hit);
                 
-                this.change(entity, 'isDead', true);
+                this.kill(entity);
             
             }
         
@@ -98,7 +115,16 @@ module.exports = function(_, Core, F, Blueprints, Item) {
         
             this.moveTo(entity, x, y);        
         
-        }, 
+        },
+        
+        /* KILL
+        *  kill an entity
+        */
+        kill: function(entity) {
+        
+            this.change(entity, 'isDead', true);
+        
+        },          
         
         /* CREATECREATURE
         *  create a sophisticated evil critter
@@ -135,7 +161,6 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             var projectile = Core.clone(skill);
             
             projectile._id = Core.id();
-            projectile._halfWidth = projectile.width / 2;
             projectile._targets = targets;
             projectile.isFlying = true;
             projectile._c = {
@@ -153,7 +178,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             this.moveTo(projectile, tx, ty, projectile.range);
             
             // send 'create' update
-            _.each(['assetId', 'x', 'y', 'z', 'speed', '_c', 'width', 'height', '_halfWidth', 'isFlying'], function(e) {
+            _.each(['assetId', 'x', 'y', 'z', 'speed', '_c', 'width', 'height', 'isFlying'], function(e) {
                 
                 this.change(projectile, e, projectile[e]);    
                 
@@ -173,7 +198,6 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             
             entity._id = Core.id();
             entity.level = map.level;
-            entity._halfWidth = entity.width / 2;
             
             switch (blueprint.entityType) {
             
@@ -198,7 +222,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             entity._map = map;
             
             // send 'create' update
-            _.each(['type', 'rank', 'x', 'y', 'z', 'rot', 'speed', '_c', 'width', 'height', 'entityType', '_halfWidth'], function(e) {
+            _.each(['type', 'rank', 'x', 'y', 'z', 'rot', 'speed', '_c', 'width', 'height', 'entityType'], function(e) {
                 
                 this.change(entity, e, entity[e]);    
                 
@@ -329,7 +353,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             
             if (entity._c.life == 0) {
             
-                this.change(entity, 'isDead', true);
+                this.kill(entity);
             
             }
         
@@ -430,16 +454,56 @@ module.exports = function(_, Core, F, Blueprints, Item) {
         *  open a lootable
         */        
         loot: function(entity, lootable, map) {
-        
+            console.log('loot', lootable._id);
             var items = Item.createDrop(lootable, entity._c.magicFind, entity._c.goldFind), 
                 // get items.length positions along an Archimedean spiral
                 positions = Core.equidistantPositionsOnArchimedeanSpiral(items.length, 30, lootable.x, lootable.y); 
             
             _.each(items, function(item, index) {
             
-                this.dropItem(item, map, positions[index].x, positions[index].y);
+                this.dropItem(item, map, ~~positions[index].x, ~~positions[index].y);
             
             }, this);         
+        
+        }, 
+        
+        changeBalance: function(entity, amount) {
+        
+            this.change(entity, 'balance', entity.balance + amount);
+        
+        }, 
+        
+        addToInventory: function(entity, item) {
+        
+            entity.inventory.push({ row: 0, col: 0, item: item, amount: 1 });
+        
+            this.change(entity, 'inventory', entity.inventory);
+        
+        }, 
+        
+        /* PICK UP
+        *  pick up a dropped item, this method is also used by the auto-pickup
+        *  behavior        
+        */
+        pickUp: function(entity, droppedItem, map) {
+        
+            console.log('pickup', droppedItem._id);
+            
+            var item = droppedItem._item;
+            
+            if (item.type == F.GOLD) {
+            
+                this.changeBalance(entity, item.amount);
+            
+            } else {
+            
+                this.addToInventory(entity, item);    
+            
+            }
+            
+            this.kill(droppedItem);
+            
+            Core.remove(droppedItem, map.droppedItems);
         
         }, 
         
@@ -454,20 +518,22 @@ module.exports = function(_, Core, F, Blueprints, Item) {
                 _map: map, 
                 type: item.type, 
                 rank: item.rank, 
-                x: x, 
-                y: y, 
-                z: Core.tile(map, x, y).z, 
+                amount: item.amount || 1, 
                 name: item.name, 
                 width: 20, 
                 height: 20  
             };
+            
+            Core.setPosition(droppedItem, x, y, map);
+        
+            console.log('drop item', droppedItem.amount + 'x ' + Core.key(droppedItem.type, F), Core.key(droppedItem.rank, F), '@ ' + droppedItem.x + '/' + droppedItem.y, droppedItem.name);
         
             map.droppedItems.push(droppedItem);
             
             // send 'create' update
-            _.each(['type', 'rank', 'x', 'y', 'z', 'name', 'width', 'height'], function(e) {
+            _.each(['type', 'rank', 'x', 'y', 'z', 'name', 'width', 'height', 'amount'], function(e) {
                     
-                this.change(item, e, item[e]);    
+                this.change(droppedItem, e, droppedItem[e]);    
                 
             }, this); 
         
@@ -484,7 +550,8 @@ module.exports = function(_, Core, F, Blueprints, Item) {
                 context: this, 
                 moveTo: this.moveTo,  
                 skill: this.skill, 
-                loot: this.loot    
+                loot: this.loot, 
+                pickUp: this.pickUp    
             });
         
         }

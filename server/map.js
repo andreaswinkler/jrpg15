@@ -18,6 +18,7 @@ module.exports = function(io, _, Env, Entity, F, Core) {
             map.creatures = [];
             map.lootables = [];
             map.projectiles = [];
+            map.droppedItems = [];
             map.level = player.hero.level || 1;
             
             // calculate the map dimensions in pixels by multiplying the grid 

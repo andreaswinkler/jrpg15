@@ -87,7 +87,8 @@
             "rarity": 37
         }, 1, {
             "minLevel": 1, 
-            "maxLevel": 100
+            "maxLevel": 100, 
+            "probabilityMultiplier": 0
         }], 
         [{
             "prefix": "Magic ", 
@@ -95,7 +96,8 @@
             "affixes": 1 
         }, 0.5, {
             "minLevel": 5, 
-            "maxLevel": 25
+            "maxLevel": 25, 
+            "probabilityMultiplier": 0.75
         }], 
         [{
             "prefix": "Magic ", 
@@ -103,7 +105,8 @@
             "affixes": 2
         }, 0.5, {
             "minLevel": 20, 
-            "maxLevel": 100
+            "maxLevel": 100, 
+            "probabilityMultiplier": 1
         }]
     ], 
     "itemAffixes": [

@@ -421,6 +421,122 @@
     
     };
     
+    /* RESOLVE INPUTS ATTACK
+    *  check if we hold shift or clicked on an valid target
+    *  returns false if the skill is not ready or there is no target in range        
+    */    
+    exports.tryAttack = function(entity, map, targets, x, y, skill, handlers, context, standGround) {
+    
+        var target;
+    
+        // if we don't have a valid skill we can't do anything
+        if (!skill || !this.canUseSkill(entity, skill)) {
+        
+            return false;
+        
+        }
+    
+        // the hero really wants to attack (shift was holded)
+        if (standGround) {
+        
+            handlers.skill.call(handlers.context, entity, skill, target, map, targets);
+            
+            return true;     
+        
+        }
+        
+        // check if we clicked on a target
+        target = this.hitTestPosition(targets, x, y);
+        
+        // if we found a target and the target is in range
+        if (target) {
+        
+            if (this.inRange(entity, target, skill.range)) {
+        
+                handlers.skill.call(handlers.context, entity, skill, target, map, targets);
+            
+            } 
+            // if we aren't in range we move towards our target
+            else {
+            
+                handlers.moveTo.call(handlers.context, entity, x, y);
+            
+            }
+            
+            return true;
+        
+        }
+        
+        return false;
+    
+    };
+    
+    /* RESOLVE INPUTS LOOT
+    *  check if we clicked on a lootable, open it or move towards it
+    */
+    exports.tryLoot = function(entity, map, lootables, x, y, handlers, standGround) {
+    
+        // check if we clicked on a lootable
+        var lootable = this.hitTestPosition(lootables, x, y);
+        
+        if (lootable) {
+        
+            // are we in range of the lootable?
+            if (this.inRange(entity, lootable, 150)) {
+            
+                handlers.loot.call(handlers.context, entity, lootable, map);
+                
+                return true;
+            
+            } 
+            // if we aren't in range we move towars our target
+            else if (!standGround) {
+            
+                handlers.moveTo.call(handlers.context, entity, x, y);
+                
+                return true;        
+            
+            }
+        
+        }
+        
+        return false;
+    
+    };
+    
+    /* RESOLVE INPUTS PICK UP
+    *  check if we can pick up something
+    */    
+    exports.tryPickUp = function(entity, map, droppedItems, x, y, handlers, standGround) {
+    
+        // check if we clicked on a dropped item
+        var droppedItem = this.hitTestPosition(droppedItems, x, y);
+        
+        if (droppedItem) {
+        
+            // are we in range of the dropped item?
+            if (this.inRange(entity, droppedItem, 150)) {
+            
+                handlers.pickUp.call(handlers.context, entity, droppedItem, map);
+                
+                return true;
+            
+            }
+            // if we aren't in range we move towars our target
+            else if (!standGround) {
+            
+                handlers.moveTo.call(handlers.context, entity, x, y);
+                
+                return true;        
+            
+            }
+        
+        }
+        
+        return false;    
+    
+    };
+
     /* RESOLVEINPUT
     *  this is only for non-ui (map) inputs
     */    
@@ -439,56 +555,30 @@
                 // if shift is true we ignore the walk-to option
                 case 'mouseLeft':
                     
-                    // first we hit-test all creatures
-                    // and interactables 
-                    target = this.hitTestPosition(map.creatures, input.x, input.y);
+                    skill = entity.skills[0];
                     
-                    skill = entity.skills[0]; 
-
-                    // if we hold the shift key we attack if possible but never
-                    // move
-                    if (input.shift) {
+                    // let's try to attack something
+                    if (!this.tryAttack(entity, map, map.creatures, input.x, input.y, skill, handlers, input.shift)) {
                     
-                        if (target && skill && this.canUseSkill(entity, skill)) {
+                        // we could not attack something, let's try to open something
+                        if (!this.tryLoot(entity, map, map.lootables, input.x, input.y, handlers, input.shift)) {
                         
-                            handlers.skill.call(handlers.context, entity, skill, target, map, map.creatures);    
-                        
-                        }
-                    
-                    } else {
-                        
-                        // if we have a target and a mouseLeft skill 
-                        // and this skill is not on cooldown
-                        // and we can afford to use the skill
-                        // and we are in range of our target to use the skill
-                        if (target && skill && this.canUseSkill(entity, skill) && this.inRange(entity, target, skill.range)) {
-                        
-                            handlers.skill.call(handlers.context, entity, skill, target, map, map.creatures);    
-                        
-                        } else {
-                        
-                            // we don't have a target we're not in range of; 
-                            // let's see if we can find a lootable
-                            if (!target) {
+                            // we couldn't open something neither, let's see if we can pick up something
+                            if (!this.tryPickUp(entity, map, map.droppedItems, input.x, input.y, handlers, input.shift)) {
                             
-                                target = this.hitTestPosition(map.lootables, input.x, input.y);
+                                // there is nothing to pick up, just move to the clicked position
+                                if (!input.shift) {
                                 
-                                if (target && this.inRange(entity, target, 100)) {
-                                
-                                    handlers.loot.call(handlers.context, entity, target, map);    
+                                    handlers.moveTo.call(handlers.context, entity, input.x, input.y);
                                 
                                 }
                             
                             }
                         
-                            // if we couldn't find anything we walk towards 
-                            // the position
-                            handlers.moveTo.call(handlers.context, entity, input.x, input.y);
-                        
-                        }
+                        }                                   
                     
                     }
-                
+
                     break;
             
             }
@@ -530,13 +620,38 @@
         entity.y = y;
         entity.z = tile ? tile.z : 0;
         
+        if (!entity._halfWidth) {
+        
+            entity._halfWidth = entity.width / 2;
+        
+        }
+        
         entity._hitBox = [
             ~~(entity.x - entity._halfWidth), 
             ~~(entity.y - entity.height), 
             ~~(entity.x + entity._halfWidth), 
             ~~(entity.y)];
     
-    }
+    };
+    
+    // get the key of a given value from a list of key/value pairs
+    exports.key = function(value, list) {
+    
+        var key;
+    
+        _.each(list, function(v, k) {
+        
+            if (v == value) {
+            
+                key = k;
+            
+            }
+        
+        });
+        
+        return key;
+    
+    };
 
 // RNG SECTION /////////////////////////////////////////////////////////////////
     
@@ -553,14 +668,14 @@
         var totalProbability = _.reduce(weightedList, function(memo, i) { return memo + i[1]; }, 0), 
             cumulatedProbability = 0, 
             random = Math.random();
-        
-        return _.find(weightedList, function(i) {
+
+        return (_.find(weightedList, function(i) {
         
             cumulatedProbability += (i[1] / totalProbability);
             
             return random <= cumulatedProbability;
             
-        }).shift();
+        }) || [])[0];
     
     };
     

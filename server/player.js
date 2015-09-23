@@ -47,6 +47,7 @@ module.exports = function(_, F, Core, Settings, Entity) {
                 
                 // create the hero character from the stored data
                 player.hero = Entity.createCharacter(Core.clone(player.heroData));
+                player.hero.balance = player.balance;
                 
                 // setup stuff when creating a new player
                 // TODO: handle this in the create method
