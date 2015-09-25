@@ -21,7 +21,8 @@
             "isOneHand": true     
         }, 
         "gold": {
-            "type": 44 
+            "type": 44, 
+            "autoPickUp": true 
         }, 
         "ruby": {
             "type": 21

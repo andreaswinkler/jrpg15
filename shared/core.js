@@ -253,6 +253,19 @@
     
     };
     
+    /* GETINRANGE
+    *  returns all entities in range
+    */
+    exports.getInRange = function(entity, entities, range) {
+    
+        return _.filter(entities, function(e) {
+        
+            return this.inRange(entity, e, range);
+        
+        }, this); 
+    
+    };    
+    
     /* GETNEAREST
     *  returns the nearest entity
     *  can optionally be limited to a specific range    
@@ -479,7 +492,7 @@
         // check if we clicked on a lootable
         var lootable = this.hitTestPosition(lootables, x, y);
         
-        if (lootable) {
+        if (lootable && !lootable.isEmpty) {
         
             // are we in range of the lootable?
             if (this.inRange(entity, lootable, 150)) {
@@ -579,6 +592,20 @@
                     
                     }
 
+                    break;
+                
+                case 'resurrect':
+                
+                    if (entity.isDead) {
+                    
+                        handlers.resurrect.call(handlers.context, entity, input.location);
+                    
+                    } else {
+                    
+                        console.log('WARNING: resurrect without entity being dead.');
+                    
+                    }
+                
                     break;
             
             }

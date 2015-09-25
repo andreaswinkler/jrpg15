@@ -132,7 +132,7 @@ function _draw() {
     
     });    
     
-    _updateStats(entities[1]);   
+    _updateStats(entities[2]);   
 
 }
 
@@ -173,9 +173,60 @@ function _dialog(msg, options) {
     $('body').append(mask);
 }
 
+function _handleUpdates(data) {
+
+    _.each(data, function(value, key) {
+    
+        if (!entities[key]) {
+        
+            entities[key] = { _id: key };
+            
+            $('body').append('<div class="entity" id="e_' + key + '"></div>');
+        
+        }
+    
+         _.each(value, function(v, k) {
+            
+            Core.deepUpdateProperty(entities[key], k, v);
+        
+        });
+        
+        $('#e_' + key)
+            .css('width', entities[key].width + 'px')
+            .css('height', entities[key].height + 'px')
+            .addClass('entityType_' + entities[key].entityType);
+        
+        Core.setPosition(entities[key], entities[key].x, entities[key].y, map);
+        
+        if (entities[key].isDead) {
+        
+            if (key == 2) {
+            
+                if ($('.dlg').length == 0) {
+                    
+                    _dialog('You dead!', [
+                        { name: 'resurrect at corpse', action: _resurrectAtCorpse }, 
+                        { name: 'resurrect at last checkpoint', action: _resurrectAtLastCheckpoint }
+                    ]);
+                
+                }
+            
+            } else {
+        
+                delete entities[key];
+                $('#e_' + key).remove();
+            
+            }
+        
+        } 
+    
+    });
+
+}
+
 Net.init(function() {
 
-    Net.send('login', { playername: '1983', password: '' }, function(data) { 
+    Net.send('login', { playername: 'onlyme', password: '' }, function(data) { 
 
         entities[data.hero._id] = data.hero;
         
@@ -183,9 +234,11 @@ Net.init(function() {
         
         $('#e_1').show();
 
-        Net.send('gameCreate', { isPublic: false }, function(data) {
+        Net.send('gameJoin', { playerId: data.buddies[0].id });
 
-        });
+        /*Net.send('gameCreate', { isPublic: false }, function(data) {
+
+        });*/
     });
     
     _updateLatency();
@@ -202,9 +255,11 @@ Net.init(function() {
         
         $('#mapgrid').css('width', data._width + 'px').css('height', data._height + 'px');
         
-        Core.setPosition(entities[1], entities[1].x, entities[1].y, map);
+        Core.setPosition(entities[2], entities[2].x, entities[2].y, map);
         
         $('#map').html(map.name);
+        
+        _handleUpdates(map.updates);
         
         Net.send('mapLoaded');
         
@@ -215,52 +270,7 @@ Net.init(function() {
     
     Net.bind('updates', function(data) {
     
-        _.each(data, function(value, key) {
-        
-            if (!entities[key]) {
-            
-                entities[key] = { _id: key };
-                
-                $('body').append('<div class="entity" id="e_' + key + '"></div>');
-            
-            }
-        
-             _.each(value, function(v, k) {
-                
-                Core.deepUpdateProperty(entities[key], k, v);
-            
-            });
-            
-            $('#e_' + key)
-                .css('width', entities[key].width + 'px')
-                .css('height', entities[key].height + 'px')
-                .addClass('entityType_' + entities[key].entityType);
-            
-            Core.setPosition(entities[key], entities[key].x, entities[key].y, map);
-            
-            if (entities[key].isDead) {
-            
-                if (key == 1) {
-                
-                    if ($('.dlg').length == 0) {
-                        
-                        _dialog('You dead!', [
-                            { name: 'resurrect at corpse', action: _resurrectAtCorpse }, 
-                            { name: 'resurrect at last checkpoint', action: _resurrectAtLastCheckpoint }
-                        ]);
-                    
-                    }
-                
-                } else {
-            
-                    delete entities[key];
-                    $('#e_' + key).remove();
-                
-                }
-            
-            } 
-        
-        });
+        _handleUpdates(data);
     
     });
 

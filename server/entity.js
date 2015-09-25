@@ -6,17 +6,21 @@ module.exports = function(_, Core, F, Blueprints, Item) {
     
         createCharacter: function(character) {
 
-            character.life = character.vit * 10;
+            character.life = character.vit * 1;
             character.mana = character.int * 5;
             character.magicFind = 1;
             character.goldFind = 1;
             character.balance = 0;
+            character.pickUpRange = 200;
+            character.isResurrectable = true;
             character._c = {
                 life: character.life, 
                 mana: character.mana, 
                 speed: character.speed, 
                 magicFind: character.magicFind, 
-                goldFind: character.goldFind
+                goldFind: character.goldFind, 
+                pickUpRange: character.pickUpRange, 
+                lifePerSecond: character.lifePerSecond
             };
             character.width = 50;
             character.height = 50;
@@ -122,9 +126,54 @@ module.exports = function(_, Core, F, Blueprints, Item) {
         */
         kill: function(entity) {
         
+            this.stop(entity);
+            
             this.change(entity, 'isDead', true);
+            
+            if (!entity.isResurrectable) {
+            
+                this.remove(entity);    
+            
+            }
         
-        },          
+        },
+        
+        /* REMOVE
+        *  remove an entity completely from the game
+        */
+        remove: function(entity) {
+        
+            var map = entity._map;
+            
+            if (map) {
+            
+                Core.remove(entity, map.creatures);
+                Core.remove(entity, map.projectiles);
+                Core.remove(entity, map.lootables);
+                Core.remove(entity, map.droppedItems);
+            
+            }
+        
+        },                   
+        
+        /* AUTO PICK UP
+        *  pick up everything auto pickupable within our pick up range
+        */
+        autoPickUp: function(entity, pickUpRange, map) {
+        
+            var droppedItems = Core.getInRange(entity, map.droppedItems, pickUpRange);
+            
+            _.each(droppedItems, function(droppedItem) {
+            
+                if (droppedItem.autoPickUp) {
+            
+                    this.pickUp(entity, droppedItem, map);
+                
+                }
+            
+            }, this);                
+        
+        }, 
         
         /* CREATECREATURE
         *  create a sophisticated evil critter
@@ -177,16 +226,50 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             
             this.moveTo(projectile, tx, ty, projectile.range);
             
-            // send 'create' update
-            _.each(['assetId', 'x', 'y', 'z', 'speed', '_c', 'width', 'height', 'isFlying'], function(e) {
-                
-                this.change(projectile, e, projectile[e]);    
-                
-            }, this);
+            // send a create update to all clients
+            this.createUpdate('projectile', projectile);
             
             return projectile;  
         
-        },         
+        },  
+        
+        createUpdate: function(key, entity, returnChanges) {
+        
+            var properties, 
+                changes = {};
+            
+            switch (key) {
+            
+                case 'projectiles':
+                case 'projectile':
+                
+                    properties = ['assetId', 'x', 'y', 'z', 'speed', '_c', 'width', 'height', 'isFlying'];
+                
+                    break;
+                
+                default: 
+                
+                    properties = ['type', 'rank', 'x', 'y', 'z', 'rot', 'speed', '_c', 'width', 'height', 'entityType'];
+                    
+                    break;
+            
+            }
+            
+            _.each(properties, function(e) {
+                
+                if (!returnChanges) {
+                
+                    this.change(entity, e, entity[e]);    
+                
+                } 
+                
+                changes[e] = entity[e];
+                
+            }, this);
+            
+            return changes;
+        
+        },        
         
         /* CREATE
         *  create a chest or critter or something
@@ -221,12 +304,8 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             // bind to map
             entity._map = map;
             
-            // send 'create' update
-            _.each(['type', 'rank', 'x', 'y', 'z', 'rot', 'speed', '_c', 'width', 'height', 'entityType'], function(e) {
-                
-                this.change(entity, e, entity[e]);    
-                
-            }, this);
+            // send a create update to all players
+            this.createUpdate('entity', entity);
             
             return entity;       
         
@@ -257,6 +336,20 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             } 
         
         }, 
+      
+        /* SETPOSITION
+        *  send an entity immediately to a position
+        */
+        setPosition: function(entity, x, y) {
+        
+            this.stop(entity);
+        
+            Core.setPosition(entity, x, y, entity._map);
+            
+            this.updatePosition(entity);
+        
+        }, 
+        
       
         /* UPDATEPOSITION
         *  makes sure the current entities position is sent to the client 
@@ -454,7 +547,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
         *  open a lootable
         */        
         loot: function(entity, lootable, map) {
-            console.log('loot', lootable._id);
+            
             var items = Item.createDrop(lootable, entity._c.magicFind, entity._c.goldFind), 
                 // get items.length positions along an Archimedean spiral
                 positions = Core.equidistantPositionsOnArchimedeanSpiral(items.length, 30, lootable.x, lootable.y); 
@@ -463,7 +556,9 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             
                 this.dropItem(item, map, ~~positions[index].x, ~~positions[index].y);
             
-            }, this);         
+            }, this);  
+            
+            lootable.isEmpty = true;       
         
         }, 
         
@@ -502,8 +597,6 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             }
             
             this.kill(droppedItem);
-            
-            Core.remove(droppedItem, map.droppedItems);
         
         }, 
         
@@ -521,7 +614,8 @@ module.exports = function(_, Core, F, Blueprints, Item) {
                 amount: item.amount || 1, 
                 name: item.name, 
                 width: 20, 
-                height: 20  
+                height: 20, 
+                autoPickUp: item.autoPickUp  
             };
             
             Core.setPosition(droppedItem, x, y, map);
@@ -539,6 +633,52 @@ module.exports = function(_, Core, F, Blueprints, Item) {
         
         }, 
         
+        /* RECOVER
+        *  reset all resources to their maximums
+        */        
+        recover: function(entity) {
+        
+            this.changeLife(entity, entity.life);
+        
+        }, 
+        
+        /* RESURRECT
+        *
+        */
+        resurrect: function(entity, location) {
+        
+            switch (location) {
+            
+                case F.LASTCHECKPOINT:
+                
+                    // temporary solution: go to default landing point
+                    this.setPosition(entity, entity._map.landingPoints.entry.x, entity._map.landingPoints.entry.y);
+                
+                    console.log('resurrect #' + entity._id + ' @ ' + entity.x + '/' + entity.y);
+                
+                    break;
+                
+                case F.CORPSE:
+                
+                    console.log('resurrect #' + entity._id + ' @ corpse');
+                
+                    break;
+                
+                case F.TOWN:
+                
+                    // requires level change
+                    console.log('[NOT_YET_IMPLEMENTED] resurrect #' + entity._id + ' in town');
+                
+                    break;
+            
+            }  
+            
+            this.recover(entity);
+            
+            this.change(entity, 'isDead', false);  
+        
+        },         
+        
         /* INPUTS
         *  handle any player inputs
         */        
@@ -551,7 +691,8 @@ module.exports = function(_, Core, F, Blueprints, Item) {
                 moveTo: this.moveTo,  
                 skill: this.skill, 
                 loot: this.loot, 
-                pickUp: this.pickUp    
+                pickUp: this.pickUp, 
+                resurrect: this.resurrect    
             });
         
         }

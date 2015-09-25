@@ -30,6 +30,15 @@ module.exports = function(_, F, Core, Settings, Entity) {
         
         },  
     
+        /* BYID
+        *  return a player by id
+        */        
+        byId: function(id) {
+        
+            return _.find(this.players, function(player) { return player._id == id });
+        
+        }, 
+    
         /* LOAD (SINGLETON)
         *  returns the player by its name either by loading it from the data 
         *  store or from the list of players
@@ -74,7 +83,7 @@ module.exports = function(_, F, Core, Settings, Entity) {
         */        
         transportize: function(player) {
         
-            return [player.id, player.name, player.hero, player.balance];
+            return [player.id, player.name, player.hero, player.balance, player.buddies];
         
         }, 
     

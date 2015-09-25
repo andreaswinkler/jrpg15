@@ -10,8 +10,8 @@ var Net = {
     envelopes: {
         status: ['players', 'games', 'msAvgServerLoop'], 
         gameCreate: ['players', 'isPublic', 'isPaused', 'tsStart'], 
-        login: ['_id', 'name', 'hero', 'balance'], 
-        map: ['_id', 'name', 'level', 'grid', 'width', 'height', '_width', '_height']
+        login: ['_id', 'name', 'hero', 'balance', 'buddies'], 
+        map: ['_id', 'name', 'level', 'grid', 'width', 'height', '_width', '_height', 'updates']
     },      
                       
     init: function(success) {
@@ -72,7 +72,7 @@ var Net = {
     
     openEnvelope: function(msg, data, msRoundtrip) {
         
-        //console.log('openEnvelope', msg, msRoundtrip);
+        //console.log('openEnvelope', msg, msRoundtrip, data);
     
         return Net.envelopes[msg] ? _.reduce(data, function(obj, e, ind) { obj[Net.envelopes[msg][ind]] = e; return obj; }, {}) : data;
 

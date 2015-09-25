@@ -21,16 +21,16 @@ module.exports = function(_, Entity, Core) {
         */
         runEntity: function(entity, map) {
         
-            if (entity.isDead) {
-            
-                return;
-            
-            }
-        
             // first we handle any inputs we might have
             if (entity._inputs && entity._inputs.length > 0) {
             
                 Entity.inputs(entity, map);
+            
+            }
+        
+            if (entity.isDead) {
+            
+                return;
             
             }
 
@@ -64,9 +64,9 @@ module.exports = function(_, Entity, Core) {
             }
 
             // life per second 
-            if (entity._c.life < entity.life && entity.lifePerSecond > 0) {
+            if (entity._c.life < entity.life && entity._c.lifePerSecond > 0) {
             
-                Entity.changeLife(entity, entity.lifePerSecond * this.seconds);
+                Entity.changeLife(entity, entity._c.lifePerSecond * this.seconds);
             
             } 
             
@@ -74,6 +74,13 @@ module.exports = function(_, Entity, Core) {
             if (entity.target) {
             
                 Entity.move(entity, this.seconds, map); 
+            
+            }
+            
+            // auto-pickup
+            if (entity._c.pickUpRange) {
+            
+                Entity.autoPickUp(entity, entity._c.pickUpRange, map);
             
             }
         

@@ -1,1 +1,1 @@
-{"_id":2,"playername":"onlyme","name":"AndiS","hero":{"id":2,"xp":0,"balance":0,"assetId":"hero.png"},"buddies":[{"id":1,"name":"Andi1983"}]}
+{"_id":2,"playername":"onlyme","name":"AndiS","balance":0,"heroData":{"_id":2,"xp":0,"assetId":"hero.png","pickupradius":100,"vit":10,"int":10,"str":10,"dex":10,"speed":100, "lifePerSecond":1},"buddies":[{"id":1,"name":"Andi1983"}]}

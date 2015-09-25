@@ -82,11 +82,11 @@ module.exports = function(io, _, Env, Entity, F, Core) {
                     map = e;
                     
                     // add the player to the map
-                    this.addPlayerToMap(player, map);
+                    this.addPlayerToMap(player, map, map.landingPoints.entry);
                 
                 }   
             
-            });
+            }, this);
             
             // the map is not in the game yet
             if (!map) {
@@ -124,14 +124,18 @@ module.exports = function(io, _, Env, Entity, F, Core) {
             
             _.each(map.projectiles, function(projectile) {
             
-                Env.runProjectile(projectile, map);
-                
-                if (projectile.isDead) {
-                
-                    elementsToRemove.push(projectile);
+                if (projectile) {
+            
+                    Env.runProjectile(projectile, map);
+                    
+                    if (projectile.isDead) {
+                    
+                        elementsToRemove.push(projectile);
+                    
+                    }
                 
                 }
-            
+                              
             });
             
             if (elementsToRemove.length > 0) {
@@ -174,7 +178,29 @@ module.exports = function(io, _, Env, Entity, F, Core) {
         */ 
         transportize: function(map) {
         
-            return [map._id, map.name, map.level, map.grid, map.width, map.height, map._width, map._height];
+            var updates = {};
+            
+            _.each(['heroes', 'lootables', 'creatures', 'projectiles', 'droppedItems'], function(key) {
+            
+                _.each(map[key], function(e) {
+                
+                    updates[e._id] = Entity.createUpdate(key, e, true); 
+                
+                });
+            
+            });
+        
+            return [
+                map._id, 
+                map.name, 
+                map.level,
+                map.grid, 
+                map.width, 
+                map.height, 
+                map._width, 
+                map._height, 
+                updates
+            ];
         
         }, 
 

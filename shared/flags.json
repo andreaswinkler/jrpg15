@@ -111,5 +111,8 @@
     "PREATTACK": 109, 
     "POSTATTACK": 110, 
     "PRIMARY": 111, 
-    "SECONDARY": 112
+    "SECONDARY": 112, 
+    "LASTCHECKPOINT": 113, 
+    "CORPSE": 114, 
+    "TOWN": 115
 } 

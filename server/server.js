@@ -60,11 +60,15 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
         */        
         login: function(event, socket, data) {
         
+            console.log('login ' + data.playername);
+        
             // delegate authentication and loading to the player module
             var player = Player.login(data.playername, data.password);
             
             // the player was authenticated and loaded successfully
             if (player) {
+            
+                console.log('player logged in: ' + player._id);
             
                 // 2-way bind the socket to the player
                 player._socket = socket;
@@ -110,14 +114,34 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
             // send a status update to all connected players
             this.updateStatus();    
             
-            // during game creation we automatically perform a join
-            Game.join(socket._player, game);
+            this.joinGame(socket, game);     
+        
+        }, 
+        
+        /* GAMEJOIN
+        *  join an open game by providing the game id or a player id
+        */        
+        gameJoin: function(event, socket, data) {
+        
+            console.log('JOIN GAME from ' + socket._player._id);
+        
+            var game;
+        
+            if (data.playerId) {
             
-            // send the game object to the client
-            socket.emit(event, Game.transportize(socket._player._game)); 
+                game = Player.byId(data.playerId)._game;    
             
-            // then send the map object to the client
-            socket.emit('map', Map.transportize(socket._player._map));         
+            }
+            
+            if (game) {
+            
+                this.joinGame(socket, game);
+                
+            } else {
+            
+                console.log('JOIN_GAME_FAILED playerId: ' + data.playerId);
+            
+            }
         
         }, 
         
@@ -152,7 +176,7 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
             // data contains key, x, y
             socket._player.hero._inputs.unshift(data);
         
-        },                          
+        },                              
         
 // PRIVATE SECTION /////////////////////////////////////////////////////////////
 
@@ -190,6 +214,21 @@ module.exports = function(io, _, Player, Game, Map, Env, Entity) {
             ]);
         
         },         
+        
+        /* JOINGAME
+        *  join a game, used by gameCreate and gameJoin alike
+        */
+        joinGame: function(socket, game) {
+        
+            Game.join(socket._player, game);
+            
+            // send the game object to the client
+            socket.emit('gameCreate', Game.transportize(socket._player._game)); 
+            
+            // then send the map object to the client
+            socket.emit('map', Map.transportize(socket._player._map));  
+        
+        },   
         
         /* RUN - SERVER-SIDE GAME LOOP
         *  here we run through all open games and 
