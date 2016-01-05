@@ -1,6 +1,6 @@
 "use strict";
 
-module.exports = function(_, F, Core, Settings, Entity) {
+module.exports = function(_, fs, F, Core, Settings, Entity) {
 
     return {
     
@@ -52,7 +52,7 @@ module.exports = function(_, F, Core, Settings, Entity) {
             if (!player) {
             
                 // load the player from the datastore
-                player = require('./../store/players/' + playername + '.json');
+                player = require(this.getPlayerFilename(playername));
                 
                 // create the hero character from the stored data
                 player.hero = Entity.createCharacter(Core.clone(player.heroData));
@@ -92,7 +92,10 @@ module.exports = function(_, F, Core, Settings, Entity) {
         */        
         save: function(player) {
         
-            // TODO: save the player to disk/db    
+            var filename = this.getPlayerFilename(player.name), 
+                content = player;
+        
+            fs.writeFile(filename, content, Core.errorHandlerLog);
         
         }, 
         
@@ -106,7 +109,16 @@ module.exports = function(_, F, Core, Settings, Entity) {
         
             return _.find(this.players, function(i) { return i.name == playername; });
         
-        }
+        }, 
+        
+        /* GETPLAYERFILENAME
+        *  returns the path to the players file
+        */
+        getPlayerFilename: function(playername) {
+        
+            return './../store/players/' + playername + '.json'
+        
+        }        
     
     };
     

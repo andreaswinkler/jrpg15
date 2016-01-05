@@ -88,7 +88,8 @@ module.exports = function(_, Core, F, Blueprints, Item) {
         
         applyDamage: function(source, target) {
  
-            var dmg = source._source ? source._source.dmg : source.dmg;
+            var sourceEntity = source._source || source, 
+                dmg = sourceEntity.dmg;
             
             if (source.dmgMultiplier) {
             
@@ -98,13 +99,41 @@ module.exports = function(_, Core, F, Blueprints, Item) {
  
             this.changeLife(target, dmg * -1);
             
-            if (target.fleeOnHit) {
+            // the target was killed, let's reward the attacker with xp
+            if (target.isDead) {
+            
+                if (target.yieldsXp) {
+            
+                    this.gainXp(sourceEntity, target.yieldsXp);
+                
+                }   
+            
+            } else if (target.fleeOnHit) {
             
                 this.flee(target, source._source ? source._source : source);    
             
             }
         
         },          
+        
+        /* GAINXP
+        *  an entity gains xp because of killing an enemy
+        *  a check is performed if the entity reached a new level        
+        */        
+        gainXp: function(entity, amount) {
+        
+            var xp = entity.xp + amount, 
+                nextLevelXp = Math.pow(100, 1 + ((entity.level - 1) * 0.05));
+            
+            if (xp >= nextLevelXp) {
+            
+                this.change(entity, 'level', entity.level + 1);
+            
+            }
+            
+            this.change(entity, 'xp', xp);
+        
+        }, 
         
         /* FLEE
         *  some creatures flee due to various reasons
@@ -183,6 +212,7 @@ module.exports = function(_, Core, F, Blueprints, Item) {
             // adjust life/dmg cubical by level
             creature.life *= Math.pow(creature.level, 3);
             creature.dmg *= Math.pow(creature.level, 3);
+            creature.yieldsXp *= Math.pow(creature.level, 3);
             
             creature._c = {
                 life: creature.life, 

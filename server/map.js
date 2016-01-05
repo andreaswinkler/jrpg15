@@ -228,7 +228,7 @@ module.exports = function(io, _, Env, Entity, F, Core) {
             var type = Core.randomElement(spawnPoint.spawn.types || map.spawnTypes), 
             
             // determine the rank object rank to spawn: if not set 
-            // we always assuem a 'normal' object (normal creature, normal
+            // we always assume a 'normal' object (normal creature, normal
             // chest, etc)
                 rank = spawnPoint.spawn.rank || F.NORMAL,
                 x = spawnPoint.x, 

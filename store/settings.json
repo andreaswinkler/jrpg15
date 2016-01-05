@@ -207,7 +207,8 @@
             "aggroRange": 500,
             "width": 50, 
             "height": 50, 
-            "fleeOnHit": true,  
+            "fleeOnHit": true,
+            "yieldsXp": 1,   
             "skills": [
                 {
                     "name": "Spike",

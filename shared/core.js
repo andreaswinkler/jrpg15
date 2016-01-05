@@ -718,7 +718,14 @@
     
         return Math.round(this.random(min, max));       
     
-    };    
+    };  
+    
+    // ERRORHANDLERLOG: log an error to the console
+    exports.errorHandlerLog = function(e) {
+    
+        (console.error || console.log)(e);
+    
+    };  
     
 
 })(typeof exports === 'undefined' ? this['Core'] = {} : exports);

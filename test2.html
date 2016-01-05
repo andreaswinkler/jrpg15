@@ -5,10 +5,10 @@
 <script type="text/javascript" src="js/jquery-2.1.3.min.js"></script>
 <script type="text/javascript" src="js/game.js"></script>
 <script type="text/javascript" src="js/particle.js"></script>
-<script type="text/javascript" src="js/assets.js"></script>
+<script type="text/javascript" src="js/assets2.js"></script>
 <script type="text/javascript" src="js/net.js"></script>
 <script type="text/javascript" src="js/ui.js"></script>
-<script type="text/javascript" src="js/renderer.js"></script>
+<script type="text/javascript" src="js/renderer2.js"></script>
 <script type="text/javascript" src="js/lobby.js"></script>
 <script type="text/javascript" src="js/debug.js"></script>
 <script type="text/javascript" src="js/sound.js"></script>
@@ -173,6 +173,8 @@ function _dialog(msg, options) {
     $('body').append(mask);
 }
 
+Renderer.init($('#mapgrid'));
+
 Net.init(function() {
 
     Net.send('login', { playername: '1983', password: '' }, function(data) { 
@@ -200,16 +202,22 @@ Net.init(function() {
         
         map = data;
         
-        $('#mapgrid').css('width', data._width + 'px').css('height', data._height + 'px');
+        Renderer
+            .map(map)
+            .then(function() {
         
-        Core.setPosition(entities[1], entities[1].x, entities[1].y, map);
+                $('#mapgrid').css('width', data._width + 'px').css('height', data._height + 'px');
         
-        $('#map').html(map.name);
+                Core.setPosition(entities[1], entities[1].x, entities[1].y, map);
         
-        Net.send('mapLoaded');
+                $('#map').html(map.name);
         
-        // we start our game loop and after a few seconds we walk to a position
-        _run();
+                Net.send('mapLoaded');
+        
+                // we start our game loop and after a few seconds we walk to a position
+                _run();
+            
+            });        
     
     });
     

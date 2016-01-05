@@ -2,6 +2,7 @@
 // on the client-side
 var app = require('http').createServer(), 
     io = require('socket.io').listen(app, { log: false }),
+    fs = require('fs'), 
     underscore = require('underscore'), 
     data = require('./../store/settings.json'),
     flags = require('./../shared/flags.json'), 
@@ -10,7 +11,7 @@ var app = require('http').createServer(),
     entity = require('./entity.js')(underscore, core, flags, data.entities, item),
     env = require('./env.js')(underscore, entity, core), 
     map = require('./map.js')(io, underscore, env, entity, flags, core), 
-    player = require('./player.js')(underscore, flags, core, data.settings, entity),
+    player = require('./player.js')(underscore, fs, flags, core, data.settings, entity),
     game = require('./game.js')(underscore, map), 
     server = require('./server.js')(io, underscore, player, game, map, env, entity);
     
