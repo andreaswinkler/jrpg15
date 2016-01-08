@@ -26,18 +26,47 @@ var Renderer = {
         
             console.log('Renderer.map', map.name);
             
-            Renderer.sources.map = new RenderLayer(1000, 1000);
+            Renderer.sources.map = new RenderLayer(map._width, map._height);
             
-            Assets.loadMany(['a1-cave-floor', 'a1-cave-floor2'])
+            Assets.loadMany(['a1-cave-floor'])
                 .then(Renderer._prepareMap);
         
         });
     
     },
     
-    drawMapSection: function(x, y, width, height) {
+    drawMapSection: function(x, y) {
     
         Renderer.layers.map.fillFrom(Renderer.sources.map, x, y);
+    
+    }, 
+    
+    drawTiles: function(renderLayer, tiles, asset) {
+    
+        var cnt = 0, 
+            tileWidth = 160, 
+            tileHeight = 80;
+    
+        _.each(tiles, function(tile, ind) {
+            
+            var x = ~~(tile.x / Core.TS * tileWidth), 
+                y = ~~((tile.y / Core.TS * tileHeight) / 2);
+            
+            if (tile.x == 0) {
+            
+                cnt++;
+            
+            }
+
+            if (cnt % 2 == 0) {
+            
+                x += tileHeight;
+            
+            } 
+
+            renderLayer.drawSprite(x, y, asset, tile.sprite);
+        
+        });
     
     }, 
 
@@ -49,36 +78,17 @@ var Renderer = {
     */    
     _prepareMap: function(assets) {
     
-        var floorAsset = assets[0], 
-            cnt = 0;
-    
+        // create a new render layer with full map dimensions
         Renderer.sources.map = new RenderLayer(map._width, map._height);
     
-        _.each(map.grid, function(tile, ind) {
-        
-            var x = ~~(tile.x / 50 * 160), 
-                y = ~~((tile.y / 50 * 80) / 2);
-            
-            if (tile.x == 0) {
-            
-                cnt++;
-            
-            }
-            
-            
-            if (cnt % 2) {
-            
-                x += 80;
-            
-            }
-        
-            Renderer.sources.map.drawSprite(x, y, floorAsset, Core.randomInt(0, 30), Core.randomInt(0, 4));
-        
-        });
+        // draw all tiles to the render layer
+        Renderer.drawTiles(Renderer.sources.map, map.grid, assets[0]);
     
-        Renderer.container.html(Renderer.sources.map.canvases[0].canvas);
+        // TEMP: append the first canvas of the map to the stage
+        //Renderer.container.html(Renderer.sources.map.canvases[0].canvas);
     
-        Renderer.drawMapSection(0, 0, 250, 250);
+        // draw the upper-left map section
+        Renderer.drawMapSection(0, 0);
     
     }
 
@@ -131,6 +141,13 @@ var RenderLayer = function(width, height) {
     
     }
     
+    // returns the (first or indexed) canvas dom element
+    this.canvas = function(index) {
+    
+        return this.canvases[(index || 0)].canvas;
+    
+    };
+    
     // clear the canvas from everything
     this.clear = function() {
     
@@ -145,7 +162,10 @@ var RenderLayer = function(width, height) {
     };
     
     // draw a single sprite from a sprite sheet
-    this.drawSprite = function(x, y, spriteSheet, row, col) {
+    this.drawSprite = function(x, y, spriteSheet, spriteIndex) {
+        
+        var row = ~~(spriteIndex / spriteSheet.cols), 
+            col = spriteIndex - (row * spriteSheet.cols);
         
         this.drawOnCanvases(
             x, 
@@ -196,6 +216,16 @@ var RenderLayer = function(width, height) {
     this.fillFrom = function(source, sx, sy) {
         
         this.drawOnCanvases(0, 0, source.canvases[0].canvas, this.canvasWidth, this.canvasHeight, sx, sy);
+
+    };
+    
+    this.toImg = function() {
+    
+        var img = document.createElement('img');
+        
+        img.src = this.canvases[0].canvas.toDataURL();
+    
+        return img;
 
     };
 

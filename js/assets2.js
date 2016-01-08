@@ -2,7 +2,8 @@ var Assets = {
 
     cache: {}, 
     
-    theme: 'd2', 
+    theme: 'd2',
+    base: '',  
     
     load: function(assetKey) {
     
@@ -24,7 +25,9 @@ var Assets = {
                         key: assetKey, 
                         asset: this, 
                         spriteWidth: 160, 
-                        spriteHeight: 80 
+                        spriteHeight: 80, 
+                        rows: 20, 
+                        cols: 5 
                     };
                     
                     resolve(Assets.cache[assetKey]);
@@ -37,7 +40,7 @@ var Assets = {
                 
                 };
                 
-                img.src = 'assets/' + Assets.theme + '/' + assetKey + '.png';
+                img.src = Assets.base + 'assets/' + Assets.theme + '/' + assetKey + '.png';
             
             } 
         
@@ -49,6 +52,29 @@ var Assets = {
     
         return Promise.all(assetKeys.map(Assets.load));    
     
-    }    
+    }, 
+    
+    toSpriteSheet: function(asset) {
+    
+        var sprites = [], 
+            canvas, i, j;
+        
+        for (i = 0; i < asset.rows; i++) {
+        
+            for (j = 0; j < asset.cols; j++) {
+        
+                canvas = new RenderLayer(asset.spriteWidth, asset.spriteHeight);
+
+                canvas.drawSprite(0, 0, asset, i * asset.cols + j);
+                
+                sprites.push(canvas);
+            
+            } 
+        
+        } 
+        
+        return sprites;          
+    
+    }
 
 }                    

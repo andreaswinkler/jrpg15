@@ -25,7 +25,7 @@
     };
     
     // constant; the internal size of a tile in pixels
-    exports.TS = 50;
+    exports.TS = 32;
 
     // determine slot
     exports.slot = function(item, slotHint) {

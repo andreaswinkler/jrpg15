@@ -1,0 +1,89 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+<script type="text/javascript" src="../js/underscore.min.js"></script>
+<script type="text/javascript" src="../js/jquery-2.1.3.min.js"></script>
+<script type="text/javascript" src="../js/assets2.js"></script>
+<script type="text/javascript" src="../js/renderer2.js"></script>
+<script type="text/javascript" src="../shared/core.js"></script>
+<style type="text/css">
+html, body { margin: 0; padding: 0; }
+body { background: url(../img/bg.jpg); font-family: Arial; color: #efefef; font-size: 10px; overflow: hidden; }
+#jrpg_editor_tools { width: 400px; height: 100%; display: block; background: #333; }
+#jrpg_editor_tools img { width: 80px; }
+#jrpg_editor_tools img.active { outline: 1px solid #00c100; }
+#jrpg_editor_canvas { width: 1500px; height: 1000px; background: #333; border: 1px solid #999; display: block; position: absolute; top: 0; left: 400px; }
+</style>
+</head>
+<body>
+<div id="jrpg_editor_tools"></div>
+<div id="jrpg_editor_canvas"></div>
+
+<script type="text/javascript">
+
+var grid = {}, 
+    i, j;
+
+for (i = 0; i < 100; i++) {
+    for (j = 0; j < 100; j++) {
+        grid[i + '_' + j] = {
+            x: j * Core.TS, 
+            y: i * Core.TS, 
+            z: 0, 
+            sprite: 0
+        };  
+    }
+}
+
+Assets.base = '../';
+Assets.loadMany(['a1-cave-floor'])
+    .then(function(assets) {
+    
+        var sprites = Assets.toSpriteSheet(assets[0]);
+        
+        _.each(sprites, function(sprite, ind) {
+            
+            var img = $(sprite.toImg());
+            
+            img.attr('data-index', ind);
+            
+            $('#jrpg_editor_tools').append(img);
+        
+        });
+        
+        $('#jrpg_editor_tools img').click(function(ev) {
+        
+            $(this).addClass('active').siblings().removeClass('active');
+        
+        });
+        
+        var mapLayer = new RenderLayer($('#jrpg_editor_canvas').width(), $('#jrpg_editor_canvas').height());
+        
+        Renderer.drawTiles(mapLayer, grid, assets[0]);
+        
+        $('#jrpg_editor_canvas').html(mapLayer.canvas());
+        
+        $('#jrpg_editor_canvas').click(function(ev) {
+        
+            var x = ev.pageX - $(this).offset().left, 
+                y = ev.pageY - $(this).offset().top, 
+                tileIndex = (~~(y / 40)) + '_' + (~~(x / 160)), 
+                tile = grid[tileIndex], 
+                spriteIndex = parseInt($('#jrpg_editor_tools img.active').attr('data-index'));
+            
+            tile.sprite = spriteIndex;
+            Renderer.drawTiles(mapLayer, grid, assets[0]);
+            
+            // get tile
+            // set index to selected index
+        
+        });
+    
+    });
+    
+// 5x40
+
+</script>
+
+</body>
+</html>
