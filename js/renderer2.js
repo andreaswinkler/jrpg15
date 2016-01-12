@@ -2,84 +2,172 @@
 // it also handles auto-resizing if the containers dimensions change
 var Renderer = {
 
-    container: null, 
+    container: null,
+    
+    mode: 'default',  
 
-    layers: {}, 
+    currentMap: null, 
+
+    layers: {},
+    
+    tileWidth: 160, 
+    tileHeight: 80,  
 
     sources: {
         map: null
     }, 
+    
+    root: {
+        x: 0, 
+        y: 0
+    }, 
 
     init: function(container) {
     
+        var width, height;
+    
         this.container = container;
         
-        this.layers.map = new RenderLayer(500, 500);
+        width = this.container.width();
+        height = this.container.height();
         
-        container.html(this.layers.map.canvases[0].canvas);
+        this.layers.map = new RenderLayer(width, height);
+        this.layers.interaction = new RenderLayer(width, height);
+        
+        container.append(this.layers.map.canvas());
+        container.append(this.layers.interaction.canvas());
     
     }, 
     
     map: function(map) {
     
+        Renderer.currentMap = map;
+    
         return new Promise(function(resolve, reject) {
         
-            console.log('Renderer.map', map.name);
-            
             Renderer.sources.map = new RenderLayer(map._width, map._height);
             
-            Assets.loadMany(['a1-cave-floor'])
-                .then(Renderer._prepareMap);
+            Assets.loadMany([map.theme + '-floor'])
+                .then(Renderer.prepareMap);
         
         });
     
     },
     
-    drawMapSection: function(x, y) {
-    
-        Renderer.layers.map.fillFrom(Renderer.sources.map, x, y);
+    drawMapSection: function() {
+        
+        Renderer.layers.map.fillFrom(
+            Renderer.sources.map, 
+            Renderer.root.x, 
+            Renderer.root.y
+        );
     
     }, 
     
     drawTiles: function(renderLayer, tiles, asset) {
     
-        var cnt = 0, 
-            tileWidth = 160, 
-            tileHeight = 80;
-    
         _.each(tiles, function(tile, ind) {
             
-            var x = ~~(tile.x / Core.TS * tileWidth), 
-                y = ~~((tile.y / Core.TS * tileHeight) / 2);
+            var localCoords = Renderer.gridIndexToLocalCoordinates(tile.r, tile.c, { x: 0, y: 0 }), 
+                x = localCoords[0], 
+                y = localCoords[1];
             
-            if (tile.x == 0) {
+            if (tile.spriteIndex != -1) {
+                
+                renderLayer.drawSprite(x, y, asset, tile.spriteIndex);
             
-                cnt++;
+            } else if (Renderer.mode == 'editor') {
+            
+                renderLayer.draw(Renderer.customTile('empty', 'rgba(100,100,100,.5)'), x, y); 
             
             }
-
-            if (cnt % 2 == 0) {
-            
-                x += tileHeight;
-            
-            } 
-
-            renderLayer.drawSprite(x, y, asset, tile.sprite);
         
         });
+    
+    },
+
+    gridIndexToLocalCoordinates: function(row, col, root) {
+    
+        var root = root || Renderer.root, 
+            x = (col * Renderer.tileWidth) - root.x, 
+            y = (row * (Renderer.tileHeight / 2)) - root.y;
+        
+        if (row % 2 == 0) {
+        
+            x += Renderer.tileHeight;
+        
+        }
+        
+        return [x, y];
+    
+    }, 
+
+    convertScreenPositionToTile: function(x, y) {
+      
+        var globalX = Renderer.root.x + x, 
+            globalY = Renderer.root.y + y, 
+            col = ~~(globalX / Renderer.tileWidth), 
+            row = ~~(globalY / (Renderer.tileHeight / 2)), 
+            localCoords = Renderer.gridIndexToLocalCoordinates(row, col);  
+      
+        return {
+            x: localCoords[0], 
+            y: localCoords[1],  
+            r: row, 
+            c: col
+        };
+    
+    },  
+    
+    setRoot: function(x, y) {
+    
+        Renderer.root.x = x;
+        Renderer.root.y = y;
     
     }, 
 
 // PRIVATE SECTION /////////////////////////////////////////////////////////////
     
+    source: function(key, createFunc) {
+    
+        if (!this.sources[key]) {
+        
+            this.sources[key] = createFunc();
+        
+        }
+        
+        return this.sources[key];
+    
+    }, 
+    
+    customTile: function(key, ss, fs) {
+    
+        var key = 'tile-' + key;
+    
+        return Renderer.source(key, function() {
+        
+            var width = Renderer.tileWidth, 
+                height = Renderer.tileHeight, 
+                layer = new RenderLayer(width, height);
+            
+            layer.diamond(0, 0, width, height, ss, fs);
+        
+            return layer.canvas(); 
+        
+        });  
+    
+    }, 
+    
     /*
     *  all necessary assets have been loaded -> draw the map on the 
     *  map source canvas(ses)    
     */    
-    _prepareMap: function(assets) {
+    prepareMap: function(assets) {
+        
+        var map = Renderer.currentMap;
     
         // create a new render layer with full map dimensions
-        Renderer.sources.map = new RenderLayer(map._width, map._height);
+        Renderer.sources.map = new RenderLayer(map.width * Renderer.tileWidth, ~~(map.height * Renderer.tileHeight / 2));
     
         // draw all tiles to the render layer
         Renderer.drawTiles(Renderer.sources.map, map.grid, assets[0]);
@@ -88,7 +176,10 @@ var Renderer = {
         //Renderer.container.html(Renderer.sources.map.canvases[0].canvas);
     
         // draw the upper-left map section
-        Renderer.drawMapSection(0, 0);
+        // add half tileWidth/tileHeight to hide zig-zag
+        Renderer.setRoot(Renderer.tileWidth / 2, Renderer.tileHeight / 2);
+        
+        Renderer.drawMapSection(Renderer.root.x, Renderer.root.y);
     
     }
 
@@ -164,18 +255,37 @@ var RenderLayer = function(width, height) {
     // draw a single sprite from a sprite sheet
     this.drawSprite = function(x, y, spriteSheet, spriteIndex) {
         
-        var row = ~~(spriteIndex / spriteSheet.cols), 
-            col = spriteIndex - (row * spriteSheet.cols);
+        var row, col;
         
-        this.drawOnCanvases(
-            x, 
-            y, 
-            spriteSheet.asset, 
-            spriteSheet.spriteWidth, 
-            spriteSheet.spriteHeight, 
-            col * spriteSheet.spriteWidth, 
-            row * spriteSheet.spriteHeight    
-        );
+        if (spriteIndex != -1) {
+        
+            row = ~~(spriteIndex / spriteSheet.cols), 
+            col = spriteIndex - (row * spriteSheet.cols);
+            
+            this.drawOnCanvases(
+                x, 
+                y, 
+                spriteSheet.asset, 
+                spriteSheet.spriteWidth, 
+                spriteSheet.spriteHeight, 
+                col * spriteSheet.spriteWidth, 
+                row * spriteSheet.spriteHeight    
+            );
+        
+        } 
+    
+    };
+    
+    this.draw = function(source, x, y, width, height, sx, sy) {
+    
+        var x = x || 0, 
+            y = y || 0, 
+            width = width || source.width, 
+            height = height || source.height, 
+            sx = sx || 0, 
+            sy = sy || 0;
+        
+        this.drawOnCanvases(x, y, source, width, height, sx, sy);
     
     };
     
@@ -202,14 +312,22 @@ var RenderLayer = function(width, height) {
     
     this.getAffectedCanvases = function(x, y, width, height) {
     
-        return _.filter(this.canvases, function(i) {
-           
-            return Core.hitTestRects(
-                [x, y, x + width, y + height], 
-                [i.canvas._x, i.canvas._y, i.canvas._x + i.canvas.width, i.canvas._y + i.canvas.height]
-            );
+        if (this.canvases.length == 1) {
         
-        });    
+            return this.canvases[0];
+        
+        } else {
+    
+            return _.filter(this.canvases, function(i) {
+               
+                return Core.hitTestRects(
+                    [x, y, x + width, y + height], 
+                    [i.canvas._x, i.canvas._y, i.canvas._x + i.canvas.width, i.canvas._y + i.canvas.height]
+                );
+            
+            }); 
+            
+        }   
     
     };
     
@@ -228,5 +346,64 @@ var RenderLayer = function(width, height) {
         return img;
 
     };
+    
+    // works only with one canvas render layers!!!
+    this.point = function(x, y, fs) {
+        
+        var canvas = this.getAffectedCanvases(x, y, 1, 1);
+        
+        this.setStyles(canvas.ctx, null, fs);
+
+        canvas.ctx.fillRect(x, y, 1, 1);            
+    
+    };
+    
+    this.diamond = function(x, y, width, height, ss, fs) {
+    
+        this.path([
+            [x, y + height / 2], 
+            [x + width / 2, y], 
+            [x + width, y + height / 2], 
+            [x + width / 2, y + height]    
+        ], ss, fs);
+    
+    };
+    
+    this.path = function(points, ss, fs) {
+    
+        var canvas = this.getAffectedCanvases(points[0][0], points[0][1], 1, 1), 
+            i;
+
+        this.setStyles(canvas.ctx, ss, fs);
+        
+        canvas.ctx.beginPath();
+        canvas.ctx.moveTo(points[0][0], points[0][1]);
+        
+        for (i = 1; i < points.length; i++) {
+        
+            canvas.ctx.lineTo(points[i][0], points[i][1]);    
+        
+        }
+        
+        canvas.ctx.closePath();
+        canvas.ctx.stroke();
+    
+    }
+    
+    this.setStyles = function(ctx, ss, fs) {
+    
+        if (ss) {
+        
+            ctx.strokeStyle = ss;
+        
+        }
+        
+        if (fs) {
+        
+            ctx.fillStyle = fs;
+        
+        }
+    
+    } 
 
 }

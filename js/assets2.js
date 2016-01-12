@@ -7,6 +7,8 @@ var Assets = {
     
     load: function(assetKey) {
     
+        console.log('Assets.load', assetKey);
+    
         return new Promise(function(resolve, reject) {
         
             var img;
