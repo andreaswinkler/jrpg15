@@ -39,13 +39,45 @@ var Editor = {
     
     toolbox: null, 
     stage: null, 
-    settings: null,   
+    settings: null, 
+    
+    currentBrush: null,   
+
+    toolboxConfig: {
+        categories: [
+            {
+                name: 'Ground', 
+                brushes: [
+                    {
+                        name: 'Empty', 
+                        sprites: [[147]]
+                    }
+                ]
+            }, 
+            {
+                name: 'Stairs', 
+                brushes: [
+                    {
+                        name: 'SW', 
+                        sprites: [[108], 
+                                  [107]]
+                    }, 
+                    {
+                        name: 'SE', 
+                        sprites: [[null, 125], 
+                                  [123, null]]
+                    },
+                ]
+            }
+        ]
+    }, 
 
     init: function(container) {
     
         this.toolbox = $('<div />', { class: 'toolbox' });
         this.stage = $('<div />', { class: 'stage' });
         this.settings = $('<div />', { class: 'settings' });
+        this.statusBar = $('<div />', { class: 'status-bar' });
         
         this.stage.width($(window).width() - 600);
         
@@ -56,6 +88,7 @@ var Editor = {
         container.append(this.toolbox);
         container.append(this.stage);
         container.append(this.settings);
+        container.append(this.statusBar);
 
         Renderer.init(this.stage);
         Renderer.mode = 'editor';
@@ -66,6 +99,8 @@ var Editor = {
             // brush on interaction layer
             var pos = Renderer.convertScreenPositionToTile(x, y);
           
+            Editor.statusBar.html(pos.r + ' / ' + pos.c);
+          
             Renderer.layers.interaction.clear().draw(Renderer.customTile('hilite', 'rgba(210,0,0,1)'), pos.x, pos.y);
 
         });
@@ -74,19 +109,100 @@ var Editor = {
         
             // convert to tile position and draw highlight diamond or activated 
             // brush on interaction layer
-            var pos = Renderer.convertScreenPositionToTile(x, y); 
+            var pos = Renderer.convertScreenPositionToTile(x, y), 
+                brush = Editor.currentBrush; 
             
-            Editor.map.grid[pos.r + '_' + pos.c].spriteIndex = 2;
+            for (i = 0; i < brush.sprites.length; i++) {
+            
+                for (j = 0; j < brush.sprites[i].length; j++) {
+                
+                    if (brush.sprites[i][j] != -1) {
+                
+                        Editor.map.grid[(pos.r + i) + '_' + (pos.c + j + (i % 2 == 1 && (pos.r + i) % 2 == 1 ? 1 : 0))].spriteIndex = brush.sprites[i][j];
+                    
+                    }    
+                
+                }
+            
+            }
             
             Renderer.map(Editor.map);   
         
         });
-
-        this.initMap(this.create());
-
+        
+        Assets.loadMany(['cave-floor']).then(function(assets) {
+        
+            _.each(Editor.toolboxConfig.categories, function(toolboxCategory) {
+                console.log(toolboxCategory);
+                var e = $('<div />', { class: 'toolbox-category' });
+                
+                e.append('<span class="title">' + toolboxCategory.name + '</span>');
+                e.append('<div />', { class: 'brushes' });
+                
+                _.each(toolboxCategory.brushes, function(brush) {
+                
+                    e.append(Editor.toolboxElementBrush(brush, assets[0]));
+                
+                });
+                
+                Editor.toolbox.append(e);
+            
+            });
+        
+            Editor.initMap(Editor.create());
+        
+        });
+        
         // setup menu
     
     },
+    
+    toolboxElementBrush: function(brush, spritesheet) {
+    
+        var e = $('<div />', { class: 'brush' }), 
+            rl = new RenderLayer(100, 50), 
+            tileWidth = ~~(100 / ((1 + (brush.sprites[0].length)) / 2)),  
+            tileHeight = ~~(tileWidth / 2), 
+            i, j, x, y; 
+        
+        e.get(0)._brush = brush;
+        
+        for (i = 0; i < brush.sprites.length; i++) {
+        
+            for (j = 0; j < brush.sprites[i].length; j++) {
+                
+                if (brush.sprites[i][j] !== null) {
+                    
+                    x = ~~(i % 2 == 1 ? (j * tileWidth) + tileHeight : (j * tileWidth)), 
+                    y = ~~(i * tileHeight / 2);
+
+                    rl.drawSprite(x, y, spritesheet, brush.sprites[i][j], tileWidth, tileHeight);
+                                            
+                } 
+            
+            }
+        
+        }
+        
+        e.append(rl.canvas());
+        e.append('<span class="title">' + brush.name + '</span>');
+        
+        e.click(function(ev) {
+        
+            var e = $(ev.target).closest('.brush'), 
+                brush = e.get(0)._brush;
+            
+            e.closest('.toolbox').find('.brush').removeClass('active');
+            
+            e.addClass('active');
+            
+            Editor.currentBrush = brush;
+        
+        });
+        
+        return e;        
+    
+    }, 
     
     initMap: function(map) {
     

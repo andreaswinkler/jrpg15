@@ -253,7 +253,7 @@ var RenderLayer = function(width, height) {
     };
     
     // draw a single sprite from a sprite sheet
-    this.drawSprite = function(x, y, spriteSheet, spriteIndex) {
+    this.drawSprite = function(x, y, spriteSheet, spriteIndex, sw, sh) {
         
         var row, col;
         
@@ -269,40 +269,47 @@ var RenderLayer = function(width, height) {
                 spriteSheet.spriteWidth, 
                 spriteSheet.spriteHeight, 
                 col * spriteSheet.spriteWidth, 
-                row * spriteSheet.spriteHeight    
+                row * spriteSheet.spriteHeight, 
+                sw, 
+                sh    
             );
         
         } 
     
     };
     
-    this.draw = function(source, x, y, width, height, sx, sy) {
+    this.draw = function(source, x, y, width, height, sx, sy, sw, sh) {
     
         var x = x || 0, 
             y = y || 0, 
             width = width || source.width, 
             height = height || source.height, 
             sx = sx || 0, 
-            sy = sy || 0;
+            sy = sy || 0, 
+            sw = sw || width, 
+            sh = sh || height;
         
-        this.drawOnCanvases(x, y, source, width, height, sx, sy);
+        this.drawOnCanvases(x, y, source, width, height, sx, sy, sw, sh);
     
     };
     
-    this.drawOnCanvases = function(x, y, source, width, height, sx, sy) {
+    this.drawOnCanvases = function(x, y, source, width, height, sx, sy, sw, sh) {
+        
+        var sw = sw || width, 
+            sh = sh || height;
         
         if (this.canvases.length == 1) {
             
-            this.canvases[0].ctx.drawImage(source, sx, sy, width, height, x, y, width, height);    
+            this.canvases[0].ctx.drawImage(source, sx, sy, width, height, x, y, sw, sh);    
         
         } else {
     
             var canvases = this.getAffectedCanvases(x, y, width, height), 
-                    i;
+                i;
     
             for (i = 0; i < canvases.length; i++) {
                 
-                canvases[i].ctx.drawImage(source, sx, sy, width, height, x - (canvases[i]._x), y - (canvases[i]._y), width, height);    
+                canvases[i].ctx.drawImage(source, sx, sy, width, height, x - (canvases[i]._x), y - (canvases[i]._y), sw, sh);    
             
             } 
         

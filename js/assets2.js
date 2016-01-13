@@ -28,7 +28,7 @@ var Assets = {
                         asset: this, 
                         spriteWidth: 160, 
                         spriteHeight: 80, 
-                        rows: 20, 
+                        rows: 40, 
                         cols: 5 
                     };
                     
