@@ -1,0 +1,35 @@
+{
+    "name": "Hystrix Lair Level 2", 
+    "landingPoints": {
+        "default": [10, 10], 
+        "waypoint": [122, 80], 
+        "exit_level3": [199, 10]
+    },
+    "checkpoints": [
+        [50, 50]
+    ], 
+    "spawnPoints": [
+        {
+            "x": 500, 
+            "y": 500, 
+            "name": "Normal Hystrix Spawnpoint at beginning of level",  
+            "components": { 
+                "_Spawner": {
+                    "blueprint": "hystrix"
+                }
+            }
+        }, 
+        {
+            "x": 800, 
+            "y": 200,
+            "name": "Champion Hystrixs spawning at center of level",   
+            "components": { 
+                "_Spawner": {
+                    "blueprint": "hystrix", 
+                    "rank": "champion"
+                }
+            }
+        }
+    ], 
+    "grid": null
+}

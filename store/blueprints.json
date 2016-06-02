@@ -1,0 +1,238 @@
+{
+    "map": {
+        "type": "map", 
+        "components": {
+            "_Map": {    
+            }
+        }    
+    },
+    "spawnPoint": {
+        "type": "virtual", 
+        "components": {
+            "_Spawner": {
+            }
+        }
+    }, 
+    "hystrix": {
+        "name": "Hystrix", 
+        "type": "creature", 
+        "components": {
+            "_Ethnicity": {
+                "domain": "beasts"
+            },
+            "_Move": {
+                "speed": 0.1
+            }, 
+            "_ExperienceProvider": {
+                "baseExperience": 1
+            },
+            "_Armor": {
+                "totalArmor": 1
+            },
+            "_Health": {
+                "totalHealth": 10, 
+                "lifePerSecond": 0
+            },
+            "_Flee": {
+                "distance": 500
+            },
+            "_Aggro": {
+                "range": 0
+            },
+            "_Damage": {
+                "baseDamage": 1
+            }, 
+            "_Attack": {
+                "attacks": [
+                    {
+                        "name": "Quill",
+                        "blueprint": "quill", 
+                        "range": 800,
+                        "damageMultiplier": 1, 
+                        "cooldown": 4000,
+                        "ranged": true,
+                        "preAttackAnimationTicks": 200,
+                        "attackAnimationTicks": 200,  
+                        "postAttackAnimationTicks": 200,
+                        "lauchAttackAfterTicks": 300
+                    }
+                ]
+            }
+        }
+    }, 
+    "hero": {
+        "name": "The Hero",
+        "type": "hero",    
+        "components": {
+            "_Ethnicity": {
+                "domain": "humans"
+            },
+            "_Move": {
+                "speed": 0.2
+            }, 
+            "_Experience": {
+                "experience": 100, 
+                "levels": [100, 400, 800, 1600, 3200, 6400, 12800]
+            },
+            "_Dodge": {
+                "dodgeChance": 0.1
+            }, 
+            "_Shield": {
+                "blockChance": 0.2, 
+                "blockAmount": 20 
+            },
+            "_Armor": {
+                "totalArmor": 20
+            }, 
+            "_Health": {
+                "totalHealth": 0, 
+                "lifePerSecond": 1
+            },
+            "_Energy": {
+                "totalEnergy": 0,
+                "energyPerSecond": 2
+            },
+            "_Damage": {
+                "baseDamage": 0
+            },
+            "_Vitality": {
+                "vitality": 10
+            },
+            "_Strength": {
+                "strength": 10
+            },
+            "_Dexterity": {
+                "dexterity": 10 
+            },
+            "_Intelligence": {
+                "intelligence": 10
+            }, 
+            "_Statistics": {                
+            },
+            "_Balance": {
+                "balance": 0
+            },
+            "_Inventory": {
+                "spaces": [
+                    {
+                        "key": "inventory",
+                        "rows": 10, 
+                        "cols": 16,
+                        "items": []
+                    },
+                    {
+                        "key": "stash0",
+                        "rows": 30,
+                        "cols": 16,
+                        "items": []
+                    },
+                    {
+                        "key": "stash1",
+                        "rows": 30,
+                        "cols": 16,
+                        "items": []
+                    }
+                ]
+            },
+            "_Equipment": {
+            }
+        }
+    },
+    "vendor": {
+        "name": "Generic Vendor", 
+        "type": "npc",
+        "components": {
+            "_Inventory": {
+                "spaces": [
+                    {
+                        "key": "stash0",
+                        "rows": 30, 
+                        "cols": 16,
+                        "items": []
+                    },
+                    {
+                        "key": "stash1",
+                        "rows": 30,
+                        "cols": 16,
+                        "items": []
+                    },
+                    {
+                        "key": "stash2",
+                        "rows": 30,
+                        "cols": 16,
+                        "items": []
+                    },
+                    {
+                        "key": "stash3",
+                        "rows": 30,
+                        "cols": 16,
+                        "items": []
+                    }
+                ]
+            }                                    
+        }  
+    },
+    "blacksmith": {
+        "name": "Blacksmith", 
+        "type": "npc", 
+        "components": {
+            "_Experience": {
+                "experience": 0, 
+                "levels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            },
+            "_Salvage": {
+            }, 
+            "_Craft": {
+            }    
+        }
+    },
+    "jeweller": {
+        "name": "Jeweller", 
+        "type": "npc", 
+        "components": {
+            "_Experience": {
+                "experience": 0, 
+                "levels": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+            },
+            "_Unsocket": {
+            }, 
+            "_Craft": {
+                "recipes": [
+                    {
+                        "level": 1, 
+                        "name": "Gem Level 2", 
+                        "costs": [
+                            { "type": "money", "amount": 100 }, 
+                            { "type": "item", "itemType": "gem", "amount": 2 }
+                        ],
+                        "result": {
+                            "blueprint": "gem", 
+                            "settings": {
+                                "type": "gem", 
+                                "subtype": "inherit"
+                            }
+                        }
+                    }
+                ]
+            }       
+        }
+    },
+    "quill": {
+        "name": "Quill",
+        "type": "object", 
+        "components": {
+            "_Move": {
+                "speed": 1
+            }
+        }    
+    },
+    "ruby": {
+        "name": "Ruby", 
+        "type": "ruby",
+        "components": {
+            "_Item": {
+                "maxStackable": 1000
+            }
+        }
+    }
+}

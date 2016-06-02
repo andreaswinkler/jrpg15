@@ -18,7 +18,7 @@
         "sword": {
             "type": 0,
             "subtype": 26, 
-            "isOneHand": true     
+            "isOneHand": true    
         }, 
         "gold": {
             "type": 44, 

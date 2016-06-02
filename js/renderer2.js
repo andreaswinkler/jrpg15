@@ -62,29 +62,43 @@ var Renderer = {
             Renderer.root.y
         );
     
-    }, 
+    },
     
-    drawTiles: function(renderLayer, tiles, asset) {
+    drawTile: function(renderLayer, tile) {
+    
+        var localCoords = Renderer.gridIndexToLocalCoordinates(tile.r, tile.c, { x: 0, y: 0 }), 
+            x = localCoords[0], 
+            y = localCoords[1];
+        
+        if (tile.spriteIndex != -1) {
+            
+            renderLayer.drawSprite(x, y, renderLayer.asset, tile.spriteIndex);
+        
+        } else if (Renderer.mode == 'editor') {
+        
+            renderLayer.draw(Renderer.customTile('empty', 'rgba(100,100,100,.5)'), x, y); 
+        
+        }    
+    
+    },  
+    
+    drawTiles: function(renderLayer, tiles) {
     
         _.each(tiles, function(tile, ind) {
             
-            var localCoords = Renderer.gridIndexToLocalCoordinates(tile.r, tile.c, { x: 0, y: 0 }), 
-                x = localCoords[0], 
-                y = localCoords[1];
-            
-            if (tile.spriteIndex != -1) {
-                
-                renderLayer.drawSprite(x, y, asset, tile.spriteIndex);
-            
-            } else if (Renderer.mode == 'editor') {
-            
-                renderLayer.draw(Renderer.customTile('empty', 'rgba(100,100,100,.5)'), x, y); 
-            
-            }
+            Renderer.drawTile(renderLayer, tile);
         
         });
+        
+        return Renderer;
     
     },
+    
+    updateTiles: function(tiles) {
+    
+        return Renderer.drawTiles(Renderer.sources.map, tiles);
+    
+    }, 
 
     gridIndexToLocalCoordinates: function(row, col, root) {
     
@@ -168,9 +182,10 @@ var Renderer = {
     
         // create a new render layer with full map dimensions
         Renderer.sources.map = new RenderLayer(map.width * Renderer.tileWidth, ~~(map.height * Renderer.tileHeight / 2));
+        Renderer.sources.map.asset = assets[0];
     
         // draw all tiles to the render layer
-        Renderer.drawTiles(Renderer.sources.map, map.grid, assets[0]);
+        Renderer.drawTiles(Renderer.sources.map, map.grid);
     
         // TEMP: append the first canvas of the map to the stage
         //Renderer.container.html(Renderer.sources.map.canvases[0].canvas);
@@ -188,6 +203,8 @@ var Renderer = {
 // the RenderLayer class represents one canvas and is used to ease the 
 // communication with the canvas api 
 var RenderLayer = function(width, height) {
+
+    this.asset = null;
 
     this.createCanvas = function(width, height, row, col) {
     

@@ -1,0 +1,313 @@
+{
+    "tileSize": 64, 
+    "spawnerActivationRadius": 2000, 
+    "resistanceAttenuationRate": 5, 
+    "armorAttenuationRate": 50, 
+    "vitalityTotalHealthRatio": 10,
+    "intelligenceTotalEnergyRatio": 2, 
+    "autoPickupRange": 500,
+    "mythicItems": [], 
+    "legendaryItems": [{
+        "type": "smallsword", 
+        "minimumLevel": 8, 
+        "probability": 1, 
+        "name": "Dwarf Knife", 
+        "prefixes": ["cruel", "sharp", null], 
+        "suffixes": ["leg_dwarfknife", "ofmerchenary", null]
+    }], 
+    "setItems": [],
+    "rareItemNames": {
+        "swords": [
+            "Vile Tooth", 
+            "Infested Blade"
+        ]
+    }, 
+    "itemTypes": {
+        "smallsword": {
+            "key": "smallsword", 
+            "name": "Small Sword",
+            "group": "weapons",
+            "subgroup": "swords",
+            "isTwoHanded": false,  
+            "minimumDamage": 1, 
+            "maximumDamage": 3,
+            "maxSockets": 3,
+            "minimumLevel": 1, 
+            "maximumLevel": 10, 
+            "slot": "weapon", 
+            "attackSpeed": 1.1
+        }
+    }, 
+    "itemQualities": [
+        {
+            "key": "good", 
+            "name": "Good", 
+            "probability": 0.2, 
+            "minimumLevel": 1,
+            "armorMultiplier": 1.15, 
+            "minimumDamageMultiplier": 1.1, 
+            "maximumDamageMultiplier": 1.1,
+            "unrepairable": false
+        },
+        {
+            "key": "exceptional", 
+            "name": "Exceptional",
+            "probability": 0.1,
+            "minimumLevel": 10,  
+            "armorMultiplier": 1.25, 
+            "minimumDamageMultiplier": 1.2, 
+            "maximumDamageMultiplier": 1.2,
+            "unrepairable": false
+        },
+        {
+            "key": "etheral", 
+            "name": "Etheral",
+            "probability": 0.025, 
+            "minimumLevel": 15, 
+            "armorMultiplier": 1.5,
+            "minimumDamageMultiplier": 1.3, 
+            "maximumDamageMultiplier": 1.3, 
+            "unrepairable": true
+        }
+    ],
+    "itemRanks": [
+        {
+            "rank": "mythic", 
+            "minimumLevel": 30,
+            "probability": 0.05,  
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [],
+            "suffixes": []
+        }, 
+        {
+            "rank": "legendary",
+            "minimumLevel": 10, 
+            "probability": 0.15, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [], 
+            "suffixes": []
+        },
+        {
+            "rank": "set", 
+            "minimumLevel": 30,
+            "probability": 0.05,  
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [],
+            "suffixes": []
+        }, 
+        {
+            "rank": "rare5",
+            "minimumLevel": 25, 
+            "probability": 0.3, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [null, null, null], 
+            "suffixes": [null, null]    
+        },
+        {
+            "rank": "rare4",
+            "minimumLevel": 15, 
+            "probability": 0.4, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [null, null], 
+            "suffixes": [null, null]      
+        },
+        {
+            "rank": "rare3",
+            "minimumLevel": 10, 
+            "probability": 0.5, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [null, null], 
+            "suffixes": [null]      
+        },
+        {
+            "rank": "magic2",
+            "minimumLevel": 7, 
+            "probability": 0.8, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [null], 
+            "suffixes": [null]      
+        },
+        {
+            "rank": "magicSuffix",
+            "minimumLevel": 7, 
+            "probability": 0.8, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [], 
+            "suffixes": [null]    
+        },
+        {
+            "rank": "magicPrefix",
+            "minimumLevel": 7, 
+            "probability": 0.8, 
+            "itemTypesWhitelist": [], 
+            "itemTypesBlacklist": [],
+            "prefixes": [null], 
+            "suffixes": []    
+        }           
+    ],
+    "itemAffixes": [
+        {
+            "key": "strong",
+            "group": "armor", 
+            "type": "prefix", 
+            "name": "Strong", 
+            "modifiers": {
+                "armor": { "min": 1, "max": 2 }
+            },
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "armor"
+        },
+        {   
+            "key": "sharp",
+            "group": "minimumDamage", 
+            "type": "prefix",  
+            "name": "Sharp",
+            "modifiers": {
+                "minimumDamage": { "min": 1, "max": 2 }
+            },
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        },
+        {
+            "key": "brutal", 
+            "group": "damagePercent", 
+            "type": "prefix", 
+            "name": "Brutal", 
+            "modifiers": {
+                "damagePercent": { "min": 8, "max": 10 }
+            }, 
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        },
+        {
+            "key": "ofvitality", 
+            "group": "vitality", 
+            "type": "suffix", 
+            "name": "of Vitality", 
+            "modifiers": {
+                "vitality": { "min": 8, "max": 15 }
+            }, 
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        }, 
+        {
+            "key": "ofdexterity", 
+            "group": "dexterity", 
+            "type": "suffix", 
+            "name": "of Dexterity", 
+            "modifiers": {
+                "dexterity": { "min": 8, "max": 15 }
+            }, 
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        }, 
+        {
+            "key": "ofstrength", 
+            "group": "strength", 
+            "type": "suffix", 
+            "name": "of Strength", 
+            "modifiers": {
+                "strength": { "min": 8, "max": 15 }
+            }, 
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        }, 
+        {
+            "key": "ofintelligence", 
+            "group": "strength", 
+            "type": "suffix", 
+            "name": "of Intelligence", 
+            "modifiers": {
+                "intelligence": { "min": 8, "max": 15 }
+            }, 
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        }, 
+        {   
+            "key": "cruel",
+            "type": "prefix",
+            "group": "criticalHitDamage",   
+            "name": "Cruel",
+            "modifiers": {
+                "critialHitDamage": { "min": 5, "max": 5 }
+            },
+            "minimumItemLevel": 1,
+            "maximumItemLevel": 9,
+            "itemGroup": "weapons"
+        },
+        {
+            "key": "offortress",
+            "type": "suffix", 
+            "group": "armor", 
+            "name": "of the Fortress", 
+            "modifiers": {
+                "armor": { "min": 10, "max": 20 }
+            },
+            "minimumItemLevel": 10,
+            "maximumItemLevel": 24,
+            "itemGroup": "armor"
+        },
+        {
+            "key": "ofbrutality",
+            "type": "suffix", 
+            "group": "criticalHitChance", 
+            "name": "of Brutality",
+            "modifiers": {
+                "criticalHitChance": { "min": 5, "max": 5 }
+            },
+            "minimumItemLevel": 10,
+            "maximumItemLevel": 24,
+            "itemGroup": "weapons"
+        },
+        {
+            "key": "ofmerchenary",
+            "type": "suffix", 
+            "group": "sockets", 
+            "name": "of Merchanary",
+            "modifiers": {
+                "sockets": { "min": 3, "max": 3 }
+            },
+            "minimumItemLevel": 10,
+            "maximumItemLevel": 24,
+            "itemGroup": "weapons"
+        },
+        {
+            "key": "leg_dwarfknife", 
+            "type": "legendary", 
+            "group": "increasedAttackSpeedPercent", 
+            "name": "leg_dwarfknife", 
+            "modifiers": {
+                "increasedAttackSpeedPercent": { "min": 10, "max": 12 }      
+            }, 
+            "minimumItemLevel": 1, 
+            "maximumItemLevel": 99, 
+            "itemGroup": "weapons"
+        }
+    ],
+    "championAffixes": {
+        "extraHealth": {
+            "totalHealthMultiplier": 3
+        },
+        "strong": {
+            "baseDamageMultiplier": 2
+        },
+        "fast": {
+            "speedMultiplier": 2
+        }
+    }          
+}

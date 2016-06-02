@@ -78,6 +78,18 @@
         return positions;
     
     };
+
+    /*
+    * x: the input value
+    * min: the minimum return value (if x = 0)
+    * max: the maximum return value
+    * steepness: the higher the value, the less steep is the curve           
+    */
+    exports.diminishingReturns = function(x, min, max, steepness) {
+    
+        return (x * max) / (x + steepness) + min;
+    
+    };    
     
     // space 
     exports.createSpace = function(flag, dimensions) {

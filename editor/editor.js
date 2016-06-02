@@ -110,7 +110,9 @@ var Editor = {
             // convert to tile position and draw highlight diamond or activated 
             // brush on interaction layer
             var pos = Renderer.convertScreenPositionToTile(x, y), 
-                brush = Editor.currentBrush; 
+                brush = Editor.currentBrush,
+                affectedTiles = [], 
+                tileIndex, i, j; 
             
             for (i = 0; i < brush.sprites.length; i++) {
             
@@ -118,7 +120,11 @@ var Editor = {
                 
                     if (brush.sprites[i][j] != -1) {
                 
-                        Editor.map.grid[(pos.r + i) + '_' + (pos.c + j + (i % 2 == 1 && (pos.r + i) % 2 == 1 ? 1 : 0))].spriteIndex = brush.sprites[i][j];
+                        tileIndex = (pos.r + i) + '_' + (pos.c + j + (i % 2 == 1 && (pos.r + i) % 2 == 1 ? 1 : 0));
+                        
+                        Editor.map.grid[tileIndex].spriteIndex = brush.sprites[i][j];
+                        
+                        affectedTiles.push(Editor.map.grid[tileIndex]);
                     
                     }    
                 
@@ -126,7 +132,8 @@ var Editor = {
             
             }
             
-            Renderer.map(Editor.map);   
+            // update changed tiles and re-draw the map
+            Renderer.updateTiles(affectedTiles).drawMapSection();
         
         });
         
